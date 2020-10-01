@@ -1,3 +1,17 @@
+#  Copyright 2019-2020 The Lux Authors.
+# 
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from lux.core.frame import LuxDataFrame
 from lux.vis.Vis import Vis
 from lux.executor.PandasExecutor import PandasExecutor
@@ -67,7 +81,7 @@ def interestingness(vis:Vis ,ldf:LuxDataFrame) -> int:
 	# Scatter Plot
 	elif (n_dim == 0 and n_msr == 2):
 		if (vis.mark=="heatmap"):
-			return 0.3 #TODO: Need better interestingness metric for binned scatterplots (heatmaps)
+			return weighted_correlation(vis.data["xBinStart"],vis.data["yBinStart"],vis.data["z"])
 		if (v_size<2): return -1 
 		if (n_filter==1):
 			v_filter_size = get_filtered_size(filter_specs, vis.data)
@@ -132,6 +146,16 @@ def skewness(v):
 	from scipy.stats import skew
 	return skew(v)
 
+def weighted_avg(x, w):
+    return np.average(x,weights=w)
+
+def weighted_cov(x, y, w):
+    return np.sum(w * (x - weighted_avg(x, w)) * (y - weighted_avg(y, w))) / np.sum(w)
+
+def weighted_correlation(x, y, w):
+    # Based on https://en.wikipedia.org/wiki/Pearson_correlation_coefficient#Weighted_correlation_coefficient
+    return weighted_cov(x, y, w) / np.sqrt(weighted_cov(x, x, w) * weighted_cov(y, y, w))
+	
 def deviation_from_overall(vis:Vis, ldf:LuxDataFrame, filter_specs:list, msr_attribute:str) -> int:
 	"""
 	Difference in bar chart/histogram shape from overall chart
