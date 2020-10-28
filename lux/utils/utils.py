@@ -32,7 +32,13 @@ def get_attrs_specs(intent):
 	if (intent is None): return []
 	spec_obj = list(filter(lambda x: x.value=="", intent))
 	return spec_obj
-
+def get_unique_attrnames(intent):
+	attributes = set([])
+	for clause in intent:
+		if (clause.attribute):
+			if (clause.attribute!="Record"):
+				attributes.add(clause.attribute)
+	return list(attributes)
 def get_filter_specs(intent):
 	if (intent is None): return []
 	spec_obj = list(filter(lambda x: x.value!="", intent))

@@ -74,13 +74,9 @@ class PandasExecutor(Executor):
             vis._vis_data = ldf._sampled # The vis data starts off being original or sampled dataframe
             filter_executed = PandasExecutor.execute_filter(vis)
             # Select relevant data based on attribute information
-            attributes = set([])
-            for clause in vis._inferred_intent:
-                if (clause.attribute):
-                    if (clause.attribute!="Record"):
-                        attributes.add(clause.attribute)
+            attributes = utils.get_unique_attrnames(vis._inferred_intent)
             # TODO: Add some type of cap size on Nrows ?
-            vis._vis_data = vis.data[list(attributes)]
+            vis._vis_data = vis.data[attributes]
             if (vis.mark =="bar" or vis.mark =="line"):
                 PandasExecutor.execute_aggregate(vis,isFiltered = filter_executed)
             elif (vis.mark =="histogram"):
