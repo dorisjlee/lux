@@ -762,14 +762,14 @@ class LuxDataFrame(pd.DataFrame):
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:
-            warnings.warn(
-                "\nUnexpected error in rendering Lux widget and recommendations. "
-                "Falling back to Pandas display.\n\n"
-                "Please report this issue on Github: https://github.com/lux-org/lux/issues ",
-                stacklevel=2,
-            )
-            display(self.display_pandas())
+        # except:
+        #     warnings.warn(
+        #         "\nUnexpected error in rendering Lux widget and recommendations. "
+        #         "Falling back to Pandas display.\n\n"
+        #         "Please report this issue on Github: https://github.com/lux-org/lux/issues ",
+        #         stacklevel=2,
+        #     )
+        #     display(self.display_pandas())
 
     def display_pandas(self):
         return self.to_pandas()
@@ -852,26 +852,32 @@ class LuxDataFrame(pd.DataFrame):
         current_vis_spec = {}
         numVC = len(vlist)  # number of visualizations in the vis list
         if numVC == 1:
-            current_vis_spec = vlist[0].render_VSpec()
+            current_vis_spec = vlist[0].to_code()
         elif numVC > 1:
             pass
         return current_vis_spec
 
     @staticmethod
     def rec_to_JSON(recs):
+        print ("recinfolist",recs)
         rec_lst = []
         import copy
-
+        
+        import ray
         rec_copy = copy.deepcopy(recs)
+
         for idx, rec in enumerate(rec_copy):
             if len(rec["collection"]) > 0:
                 rec["vspec"] = []
                 for vis in rec["collection"]:
-                    chart = vis.render_VSpec()
+                    chart = vis.to_code.remote()
                     rec["vspec"].append(chart)
                 rec_lst.append(rec)
-                # delete DataObjectCollection since not JSON serializable
+                # delete since not JSON serializable
                 del rec_lst[idx]["collection"]
+        print ("rec_lst",rec_lst)
+        rec_lst = ray.get(rec_lst)
+        print ("after get rec_lst",rec_lst)
         return rec_lst
 
     # Overridden Pandas Functions

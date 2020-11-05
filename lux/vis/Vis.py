@@ -16,8 +16,9 @@ from __future__ import annotations
 from typing import List, Callable, Union
 from lux.vis.Clause import Clause
 from lux.utils.utils import check_import_lux_widget
+import ray
 
-
+@ray.remote
 class Vis:
     """
     Vis Object represents a collection of fully fleshed out specifications required for data fetching and visualization.
@@ -290,9 +291,22 @@ class Vis:
             )
         else:
             return self._code
+    
+    def to_code(self, language="vegalite"):
+        """
+        Convert Vis object to code specification
 
-    def render_VSpec(self, renderer="altair"):
-        if renderer == "altair":
+        Parameters
+        ----------
+        language : str, optional
+            choice of target language to produce the visualization code in, by default "vegalite"
+
+        Returns
+        -------
+        spec: 
+            visualization specification corresponding to the Vis object
+        """
+        if language == "vegalite":
             return self.to_VegaLite(prettyOutput=False)
 
     def refresh_source(self, ldf):  # -> Vis:

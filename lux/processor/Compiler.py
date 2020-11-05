@@ -129,7 +129,8 @@ class Compiler:
                             vis = Vis(_inferred_intent)
                             collection.append(vis)
                     else:
-                        vis = Vis(column_list)
+                        vis = Vis.remote(intent=column_list)
+                        print (vis)
                         collection.append(vis)
                 else:
                     combine(col_attrs[1:], column_list)
