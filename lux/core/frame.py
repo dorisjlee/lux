@@ -852,33 +852,50 @@ class LuxDataFrame(pd.DataFrame):
         current_vis_spec = {}
         numVC = len(vlist)  # number of visualizations in the vis list
         if numVC == 1:
-            current_vis_spec = ray.get(Vis.to_code.remote(vlist[0]))
+            # current_vis_spec = ray.get(Vis.to_code.remote(vlist[0]))
+            current_vis_spec = vlist[0].to_code()
         elif numVC > 1:
             pass
         return current_vis_spec
 
+    # @staticmethod
+    # def rec_to_JSON(recs):
+    #     rec_lst = []
+    #     import copy
+        
+    #     rec_copy = copy.deepcopy(recs)
+    #     futures = []
+    #     for idx, rec in enumerate(rec_copy):
+    #         if len(rec["collection"]) > 0:
+    #             rec["future"] = []
+    #             for vis in rec["collection"]:
+    #                 chart = Vis.to_code.remote(vis)
+    #                 futures.append(chart)
+    #                 rec["future"].append(chart)
+    #             rec_lst.append(rec)
+    #             # delete since not JSON serializable
+    #             del rec_lst[idx]["collection"]
+    #     for rec in rec_lst:
+    #         # Convert futures to vspec
+    #         chart = ray.get(rec["future"])
+    #         rec["vspec"] = chart
+    #         del rec["future"]
+    #     return rec_lst
     @staticmethod
     def rec_to_JSON(recs):
         rec_lst = []
         import copy
-        
+
         rec_copy = copy.deepcopy(recs)
-        futures = []
         for idx, rec in enumerate(rec_copy):
             if len(rec["collection"]) > 0:
-                rec["future"] = []
+                rec["vspec"] = []
                 for vis in rec["collection"]:
-                    chart = Vis.to_code.remote(vis)
-                    futures.append(chart)
-                    rec["future"].append(chart)
+                    chart = vis.to_code()
+                    rec["vspec"].append(chart)
                 rec_lst.append(rec)
-                # delete since not JSON serializable
+                # delete DataObjectCollection since not JSON serializable
                 del rec_lst[idx]["collection"]
-        for rec in rec_lst:
-            # Convert futures to vspec
-            chart = ray.get(rec["future"])
-            rec["vspec"] = chart
-            del rec["future"]
         return rec_lst
 
     # Overridden Pandas Functions

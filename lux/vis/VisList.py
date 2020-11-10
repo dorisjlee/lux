@@ -17,6 +17,7 @@ from lux.vislib.altair.AltairRenderer import AltairRenderer
 from lux.utils.utils import check_import_lux_widget
 from typing import List, Union, Callable, Dict
 from lux.vis.Vis import Vis
+from lux.vis.RemoteVis import RemoteVis
 from lux.vis.Clause import Clause
 import warnings
 
@@ -108,7 +109,7 @@ class VisList:
         self._collection.pop(index)
 
     def _is_vis_input(self):
-        if type(self._input_lst[0]) == Vis:
+        if type(self._input_lst[0]) == Vis or  type(self._input_lst[0]) == RemoteVis:
             return True
         elif type(self._input_lst[0]) == Clause:
             return False

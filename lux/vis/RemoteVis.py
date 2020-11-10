@@ -1,10 +1,24 @@
+#  Copyright 2019-2020 The Lux Authors.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from __future__ import annotations
 from typing import List, Callable, Union
 from lux.vis.Clause import Clause
 from lux.utils.utils import check_import_lux_widget
-
 import ray
 from lux.vis.Vis import Vis
+
 @ray.remote
 class RemoteVis():
     """
@@ -12,7 +26,6 @@ class RemoteVis():
     """
 
     def __init__(self, intent, source=None, title="", score=0.0):
-        # super().__init__(intent, source, title, score)
         self._intent = intent  # This is the user's original intent to Vis
         self._inferred_intent = intent  # This is the re-written, expanded version of user's original intent (include inferred vis info)
         self._source = source  # This is the original data that is attached to the Vis
@@ -29,7 +42,7 @@ class RemoteVis():
     def __repr__(self):
         if self._source is None:
             return (
-                f"<Vis  ({str(self._intent)}) mark: {self._mark}, score: {self.score} >"
+                f"<RemoteVis  ({str(self._intent)}) mark: {self._mark}, score: {self.score} >"
             )
         filter_intents = None
         channels, additional_channels = [], []

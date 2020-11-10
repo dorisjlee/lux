@@ -21,7 +21,7 @@ from lux.utils import date_utils
 import pandas as pd
 import numpy as np
 import warnings
-
+from lux.vis.RemoteVis import RemoteVis
 
 class Compiler:
     """
@@ -126,10 +126,10 @@ class Compiler:
                     ):  # if we have filters, generate combinations for each row.
                         for row in filters:
                             _inferred_intent = copy.deepcopy(column_list + [row])
-                            vis = Vis(_inferred_intent)
+                            vis = RemoteVis(_inferred_intent)
                             collection.append(vis)
                     else:
-                        vis = Vis(column_list)
+                        vis = RemoteVis(column_list)
                         collection.append(vis)
                 else:
                     combine(col_attrs[1:], column_list)
