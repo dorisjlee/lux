@@ -23,7 +23,7 @@ from lux.utils.utils import check_import_lux_widget
 from typing import Dict, Union, List, Callable
 import warnings
 import lux
-
+import ray
 
 class LuxDataFrame(pd.DataFrame):
     """
@@ -852,7 +852,7 @@ class LuxDataFrame(pd.DataFrame):
         current_vis_spec = {}
         numVC = len(vlist)  # number of visualizations in the vis list
         if numVC == 1:
-            current_vis_spec = vlist[0].render_VSpec()
+            current_vis_spec = ray.get(Vis.to_code.remote(vlist[0]))
         elif numVC > 1:
             pass
         return current_vis_spec
@@ -862,7 +862,6 @@ class LuxDataFrame(pd.DataFrame):
         rec_lst = []
         import copy
         
-        import ray
         rec_copy = copy.deepcopy(recs)
         futures = []
         for idx, rec in enumerate(rec_copy):

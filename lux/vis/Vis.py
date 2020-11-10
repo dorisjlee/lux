@@ -292,7 +292,7 @@ class Vis:
             return self._code
     
     @ray.remote
-    def to_code(vis:Vis, language="vegalite"):
+    def to_code(self, language="vegalite"):
         """
         Convert Vis object to code specification
 
@@ -307,7 +307,7 @@ class Vis:
             visualization specification corresponding to the Vis object
         """
         if language == "vegalite":
-            return vis.to_VegaLite(prettyOutput=False)
+            return self.to_VegaLite(prettyOutput=False)
 
     def refresh_source(self, ldf):  # -> Vis:
         """
