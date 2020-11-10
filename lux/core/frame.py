@@ -852,13 +852,13 @@ class LuxDataFrame(pd.DataFrame):
         current_vis_spec = {}
         numVC = len(vlist)  # number of visualizations in the vis list
         if numVC == 1:
-            current_vis_spec = Vis.to_code( vlist[0])
+            current_vis_spec = vlist[0].render_VSpec()
+        elif numVC > 1:
             pass
         return current_vis_spec
 
     @staticmethod
     def rec_to_JSON(recs):
-        print ("recinfolist",recs)
         rec_lst = []
         import copy
         
@@ -867,21 +867,19 @@ class LuxDataFrame(pd.DataFrame):
         futures = []
         for idx, rec in enumerate(rec_copy):
             if len(rec["collection"]) > 0:
-                rec["vspec"] = []
+                rec["future"] = []
                 for vis in rec["collection"]:
                     chart = Vis.to_code.remote(vis)
                     futures.append(chart)
-                    rec["vspec"].append(chart)
+                    rec["future"].append(chart)
                 rec_lst.append(rec)
                 # delete since not JSON serializable
                 del rec_lst[idx]["collection"]
-        print ("rec_lst",rec_lst)
-        # rec_lst = ray.get(rec_lst)
-        # print ("after get rec_lst",rec_lst)
-        print ("futures",futures)
-        ray.get(futures)
-        # print ("after get futures",futures)
-        print (rec_lst)
+        for rec in rec_lst:
+            # Convert futures to vspec
+            chart = ray.get(rec["future"])
+            rec["vspec"] = chart
+            del rec["future"]
         return rec_lst
 
     # Overridden Pandas Functions
