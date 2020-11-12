@@ -32,23 +32,30 @@ class LuxDataFrame(pd.DataFrame):
 
     # MUST register here for new properties!!
     _metadata = [
+        "_history",
         "_intent",
+        "_recommendation",
+        "_saved_export",
+        "_current_vis",
+        "_prev",
+        "executor_type",
+        "executor",
+        "_sampled",
+        "_default_pandas_display",
+        "_toggle_pandas_display",
+        "_plot_config",
+        "_message",
+        "_pandas_only",
         "data_type_lookup",
         "data_type",
         "data_model_lookup",
         "data_model",
         "unique_values",
         "cardinality",
-        "_rec_info",
-        "_pandas_only",
         "_min_max",
-        "plot_config",
-        "_current_vis",
-        "_widget",
-        "_recommendation",
-        "_prev",
-        "_history",
-        "_saved_export",
+        "pre_aggregated",
+        "_rec_info",
+        "_widget"
     ]
 
     def __init__(self, *args, **kw):
@@ -108,9 +115,9 @@ class LuxDataFrame(pd.DataFrame):
             if (
                 len(self) > 0
             ):  # only compute metadata information if the dataframe is non-empty
+                self._infer_structure()
                 self.executor.compute_stats(self)
                 self.executor.compute_dataset_metadata(self)
-                self._infer_structure()
                 self._metadata_fresh = True
 
     def expire_recs(self):
@@ -136,11 +143,11 @@ class LuxDataFrame(pd.DataFrame):
     #####################
     ## Override Pandas ##
     #####################
-    def __getattr__(self, name):
-        ret_value = super(LuxDataFrame, self).__getattr__(name)
-        self.expire_metadata()
-        self.expire_recs()
-        return ret_value
+    # def __getattr__(self, name):
+    #     ret_value = super(LuxDataFrame, self).__getattr__(name)
+    #     self.expire_metadata()
+    #     self.expire_recs()
+    #     return ret_value
 
     def _set_axis(self, axis, labels):
         super(LuxDataFrame, self)._set_axis(axis, labels)
@@ -852,51 +859,51 @@ class LuxDataFrame(pd.DataFrame):
         current_vis_spec = {}
         numVC = len(vlist)  # number of visualizations in the vis list
         if numVC == 1:
-            # current_vis_spec = ray.get(Vis.to_code.remote(vlist[0]))
-            current_vis_spec = vlist[0].to_code()
+            current_vis_spec = ray.get(Vis.to_code.remote(vlist[0]))
+            #current_vis_spec = vlist[0].to_code()
         elif numVC > 1:
             pass
         return current_vis_spec
 
-    # @staticmethod
-    # def rec_to_JSON(recs):
-    #     rec_lst = []
-    #     import copy
-        
-    #     rec_copy = copy.deepcopy(recs)
-    #     futures = []
-    #     for idx, rec in enumerate(rec_copy):
-    #         if len(rec["collection"]) > 0:
-    #             rec["future"] = []
-    #             for vis in rec["collection"]:
-    #                 chart = Vis.to_code.remote(vis)
-    #                 futures.append(chart)
-    #                 rec["future"].append(chart)
-    #             rec_lst.append(rec)
-    #             # delete since not JSON serializable
-    #             del rec_lst[idx]["collection"]
-    #     for rec in rec_lst:
-    #         # Convert futures to vspec
-    #         chart = ray.get(rec["future"])
-    #         rec["vspec"] = chart
-    #         del rec["future"]
-    #     return rec_lst
     @staticmethod
     def rec_to_JSON(recs):
         rec_lst = []
         import copy
-
+        
         rec_copy = copy.deepcopy(recs)
+        futures = []
         for idx, rec in enumerate(rec_copy):
             if len(rec["collection"]) > 0:
-                rec["vspec"] = []
+                rec["future"] = []
                 for vis in rec["collection"]:
-                    chart = vis.to_code()
-                    rec["vspec"].append(chart)
+                    chart = Vis.to_code.remote(vis)
+                    futures.append(chart)
+                    rec["future"].append(chart)
                 rec_lst.append(rec)
-                # delete DataObjectCollection since not JSON serializable
+                # delete since not JSON serializable
                 del rec_lst[idx]["collection"]
+        for rec in rec_lst:
+            # Convert futures to vspec
+            chart = ray.get(rec["future"])
+            rec["vspec"] = chart
+            del rec["future"]
         return rec_lst
+    # @staticmethod
+    # def rec_to_JSON(recs):
+    #     rec_lst = []
+    #     import copy
+
+    #     rec_copy = copy.deepcopy(recs)
+    #     for idx, rec in enumerate(rec_copy):
+    #         if len(rec["collection"]) > 0:
+    #             rec["vspec"] = []
+    #             for vis in rec["collection"]:
+    #                 chart = vis.to_code()
+    #                 rec["vspec"].append(chart)
+    #             rec_lst.append(rec)
+    #             # delete DataObjectCollection since not JSON serializable
+    #             del rec_lst[idx]["collection"]
+    #     return rec_lst
 
     # Overridden Pandas Functions
     def head(self, n: int = 5):

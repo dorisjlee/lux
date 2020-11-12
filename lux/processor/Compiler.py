@@ -126,10 +126,10 @@ class Compiler:
                     ):  # if we have filters, generate combinations for each row.
                         for row in filters:
                             _inferred_intent = copy.deepcopy(column_list + [row])
-                            vis = RemoteVis(_inferred_intent)
+                            vis = RemoteVis.remote(_inferred_intent)
                             collection.append(vis)
                     else:
-                        vis = RemoteVis(column_list)
+                        vis = RemoteVis.remote(column_list)
                         collection.append(vis)
                 else:
                     combine(col_attrs[1:], column_list)
