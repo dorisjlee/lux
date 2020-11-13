@@ -337,22 +337,14 @@ class RemoteVis():
             from lux.processor.Parser import Parser
             from lux.processor.Validator import Validator
             from lux.processor.Compiler import Compiler
-            from lux.executor.PandasExecutor import (
-                PandasExecutor,
-            )  # TODO: temporary (generalize to executor)
-            print ("beginning:",id(self))
+            
             ldf.maintain_metadata()
             self._source = ldf
             self._inferred_intent = Parser.parse(self._intent)
             Validator.validate_intent(self._inferred_intent, ldf)
-            print ("before compiler:",id(self))
             Compiler.compile_vis(ldf, self)
-            print ('after compiler:', id(self))
             ldf.executor.execute([self], ldf)
-            print ('after executor:', id(self))
-            print ("self.data:",self.data.to_pandas())
-            # print ('vlist',vlist)
-            print ('final vis',self)
+            # print ('final vis',self)
             # Copying properties over since we can not redefine `self` within class function
             # if (self):
             #     vis = vlist[0]

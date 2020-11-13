@@ -25,7 +25,7 @@ import warnings
 class VisList:
     """VisList is a list of Vis objects."""
 
-    def __init__(self, input_lst: Union[List[Vis], List[Clause]], source=None):
+    def __init__(self, input_lst: Union[List[RemoteVis], List[Clause]], source=None):
         # Overloaded Constructor
         self._source = source
         self._input_lst = input_lst
@@ -109,9 +109,11 @@ class VisList:
         self._collection.pop(index)
 
     def _is_vis_input(self):
-        if type(self._input_lst[0]) == Vis or  type(self._input_lst[0]) == RemoteVis:
+        import ray
+        classtype = type(self._input_lst[0]) 
+        if classtype == Vis or classtype == RemoteVis or classtype == ray.actor.ActorHandle:
             return True
-        elif type(self._input_lst[0]) == Clause:
+        elif classtype == Clause:
             return False
 
     def __getitem__(self, key):
@@ -123,110 +125,110 @@ class VisList:
     def __len__(self):
         return len(self._collection)
 
-    def __repr__(self):
-        if len(self._collection) == 0:
-            return str(self._input_lst)
-        x_channel = ""
-        y_channel = ""
-        largest_mark = 0
-        largest_filter = 0
-        for (
-            vis
-        ) in self._collection:  # finds longest x attribute among all visualizations
-            filter_intents = None
-            for clause in vis._inferred_intent:
-                if clause.value != "":
-                    filter_intents = clause
+    # def __repr__(self):
+    #     if len(self._collection) == 0:
+    #         return str(self._input_lst)
+    #     x_channel = ""
+    #     y_channel = ""
+    #     largest_mark = 0
+    #     largest_filter = 0
+    #     for (
+    #         vis
+    #     ) in self._collection:  # finds longest x attribute among all visualizations
+    #         filter_intents = None
+    #         for clause in vis._inferred_intent:
+    #             if clause.value != "":
+    #                 filter_intents = clause
 
-                if clause.aggregation != "" and clause.aggregation is not None:
-                    attribute = (
-                        clause._aggregation_name.upper() + "(" + clause.attribute + ")"
-                    )
-                elif clause.bin_size > 0:
-                    attribute = "BIN(" + clause.attribute + ")"
-                else:
-                    attribute = clause.attribute
+    #             if clause.aggregation != "" and clause.aggregation is not None:
+    #                 attribute = (
+    #                     clause._aggregation_name.upper() + "(" + clause.attribute + ")"
+    #                 )
+    #             elif clause.bin_size > 0:
+    #                 attribute = "BIN(" + clause.attribute + ")"
+    #             else:
+    #                 attribute = clause.attribute
 
-                if clause.channel == "x" and len(x_channel) < len(attribute):
-                    x_channel = attribute
-                if clause.channel == "y" and len(y_channel) < len(attribute):
-                    y_channel = attribute
-            if len(vis.mark) > largest_mark:
-                largest_mark = len(vis.mark)
-            if (
-                filter_intents
-                and len(str(filter_intents.value)) + len(filter_intents.attribute)
-                > largest_filter
-            ):
-                largest_filter = len(str(filter_intents.value)) + len(
-                    filter_intents.attribute
-                )
-        vis_repr = []
-        largest_x_length = len(x_channel)
-        largest_y_length = len(y_channel)
-        for (
-            vis
-        ) in (
-            self._collection
-        ):  # pads the shorter visualizations with spaces before the y attribute
-            filter_intents = None
-            x_channel = ""
-            y_channel = ""
-            additional_channels = []
-            for clause in vis._inferred_intent:
-                if clause.value != "":
-                    filter_intents = clause
+    #             if clause.channel == "x" and len(x_channel) < len(attribute):
+    #                 x_channel = attribute
+    #             if clause.channel == "y" and len(y_channel) < len(attribute):
+    #                 y_channel = attribute
+    #         if len(vis.mark) > largest_mark:
+    #             largest_mark = len(vis.mark)
+    #         if (
+    #             filter_intents
+    #             and len(str(filter_intents.value)) + len(filter_intents.attribute)
+    #             > largest_filter
+    #         ):
+    #             largest_filter = len(str(filter_intents.value)) + len(
+    #                 filter_intents.attribute
+    #             )
+    #     vis_repr = []
+    #     largest_x_length = len(x_channel)
+    #     largest_y_length = len(y_channel)
+    #     for (
+    #         vis
+    #     ) in (
+    #         self._collection
+    #     ):  # pads the shorter visualizations with spaces before the y attribute
+    #         filter_intents = None
+    #         x_channel = ""
+    #         y_channel = ""
+    #         additional_channels = []
+    #         for clause in vis._inferred_intent:
+    #             if clause.value != "":
+    #                 filter_intents = clause
 
-                if (
-                    clause.aggregation != ""
-                    and clause.aggregation is not None
-                    and vis.mark != "scatter"
-                ):
-                    attribute = (
-                        clause._aggregation_name.upper() + "(" + clause.attribute + ")"
-                    )
-                elif clause.bin_size > 0:
-                    attribute = "BIN(" + clause.attribute + ")"
-                else:
-                    attribute = clause.attribute
+    #             if (
+    #                 clause.aggregation != ""
+    #                 and clause.aggregation is not None
+    #                 and vis.mark != "scatter"
+    #             ):
+    #                 attribute = (
+    #                     clause._aggregation_name.upper() + "(" + clause.attribute + ")"
+    #                 )
+    #             elif clause.bin_size > 0:
+    #                 attribute = "BIN(" + clause.attribute + ")"
+    #             else:
+    #                 attribute = clause.attribute
 
-                if clause.channel == "x":
-                    x_channel = attribute.ljust(largest_x_length)
-                elif clause.channel == "y":
-                    y_channel = attribute
-                elif clause.channel != "":
-                    additional_channels.append([clause.channel, attribute])
-            if filter_intents:
-                y_channel = y_channel.ljust(largest_y_length)
-            elif largest_filter != 0:
-                y_channel = y_channel.ljust(largest_y_length + largest_filter + 9)
-            else:
-                y_channel = y_channel.ljust(largest_y_length + largest_filter)
-            if x_channel != "":
-                x_channel = "x: " + x_channel + ", "
-            if y_channel != "":
-                y_channel = "y: " + y_channel
-            aligned_mark = vis.mark.ljust(largest_mark)
-            str_additional_channels = ""
-            for channel in additional_channels:
-                str_additional_channels += ", " + channel[0] + ": " + channel[1]
-            if filter_intents:
-                aligned_filter = (
-                    " -- ["
-                    + filter_intents.attribute
-                    + filter_intents.filter_op
-                    + str(filter_intents.value)
-                    + "]"
-                )
-                aligned_filter = aligned_filter.ljust(largest_filter + 8)
-                vis_repr.append(
-                    f" <Vis  ({x_channel}{y_channel}{str_additional_channels} {aligned_filter}) mark: {aligned_mark}, score: {vis.score:.2f} >"
-                )
-            else:
-                vis_repr.append(
-                    f" <Vis  ({x_channel}{y_channel}{str_additional_channels}) mark: {aligned_mark}, score: {vis.score:.2f} >"
-                )
-        return "[" + ",\n".join(vis_repr)[1:] + "]"
+    #             if clause.channel == "x":
+    #                 x_channel = attribute.ljust(largest_x_length)
+    #             elif clause.channel == "y":
+    #                 y_channel = attribute
+    #             elif clause.channel != "":
+    #                 additional_channels.append([clause.channel, attribute])
+    #         if filter_intents:
+    #             y_channel = y_channel.ljust(largest_y_length)
+    #         elif largest_filter != 0:
+    #             y_channel = y_channel.ljust(largest_y_length + largest_filter + 9)
+    #         else:
+    #             y_channel = y_channel.ljust(largest_y_length + largest_filter)
+    #         if x_channel != "":
+    #             x_channel = "x: " + x_channel + ", "
+    #         if y_channel != "":
+    #             y_channel = "y: " + y_channel
+    #         aligned_mark = vis.mark.ljust(largest_mark)
+    #         str_additional_channels = ""
+    #         for channel in additional_channels:
+    #             str_additional_channels += ", " + channel[0] + ": " + channel[1]
+    #         if filter_intents:
+    #             aligned_filter = (
+    #                 " -- ["
+    #                 + filter_intents.attribute
+    #                 + filter_intents.filter_op
+    #                 + str(filter_intents.value)
+    #                 + "]"
+    #             )
+    #             aligned_filter = aligned_filter.ljust(largest_filter + 8)
+    #             vis_repr.append(
+    #                 f" <Vis  ({x_channel}{y_channel}{str_additional_channels} {aligned_filter}) mark: {aligned_mark}, score: {vis.score:.2f} >"
+    #             )
+    #         else:
+    #             vis_repr.append(
+    #                 f" <Vis  ({x_channel}{y_channel}{str_additional_channels}) mark: {aligned_mark}, score: {vis.score:.2f} >"
+    #             )
+    #     return "[" + ",\n".join(vis_repr)[1:] + "]"
 
     def map(self, function):
         # generalized way of applying a function to each element
@@ -294,7 +296,7 @@ class VisList:
             "description": "Shows a vis list defined by the intent",
         }
         recommendation["collection"] = self._collection
-
+        print ("recommendation[collection]",recommendation["collection"])
         check_import_lux_widget()
         import luxwidget
 
@@ -337,15 +339,15 @@ class VisList:
                     for vis in self._collection:
                         vis._inferred_intent = Parser.parse(vis._intent)
                         Validator.validate_intent(vis._inferred_intent, ldf)
-                        vislist = Compiler.compile_vis(ldf, vis)
-                        if len(vislist) > 0:
-                            vis = vislist[0]
-                            compiled_collection.append(vis)
+                        Compiler.compile_vis(ldf, vis)
+                        compiled_collection.append(vis)
                     self._collection = compiled_collection
                 else:
                     self._inferred_intent = Parser.parse(self._intent)
                     Validator.validate_intent(self._inferred_intent, ldf)
-                    self._collection = Compiler.compile_intent(
-                        ldf, self._inferred_intent
-                    )
+                    self._collection = Compiler.compile_intent(ldf, self._inferred_intent)
                 ldf.executor.execute(self._collection, ldf)
+        # import ray
+        print ("after refresh source",self._collection)
+        # self._collection = ray.get(self._collection)
+        # print ("after get",self._collection)

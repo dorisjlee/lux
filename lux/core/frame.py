@@ -24,7 +24,7 @@ from typing import Dict, Union, List, Callable
 import warnings
 import lux
 import ray
-
+from lux.vis.RemoteVis import RemoteVis
 class LuxDataFrame(pd.DataFrame):
     """
     A subclass of pd.DataFrame that supports all dataframe operations while housing other variables and functions for generating visual recommendations.
@@ -856,15 +856,11 @@ class LuxDataFrame(pd.DataFrame):
 
     @staticmethod
     def current_vis_to_JSON(vlist, input_current_vis=""):
-        from lux.vis.RemoteVis import RemoteVis
         current_vis_spec = {}
         numVC = len(vlist)  # number of visualizations in the vis list
         if numVC == 1:
             # current_vis_spec = ray.get(RemoteVis.to_code.remote(vlist[0]))
-            print ("vlist[0]",vlist[0])
-            print ("vlist[0].to_code()",vlist[0].to_code())
             current_vis_spec = vlist[0].to_code()
-            print ("current_vis_spec",current_vis_spec)
         elif numVC > 1:
             pass
         return current_vis_spec
@@ -873,29 +869,24 @@ class LuxDataFrame(pd.DataFrame):
     def rec_to_JSON(recs):
         rec_lst = []
         import copy
-        
         rec_copy = copy.deepcopy(recs)
         futures = []
         for idx, rec in enumerate(rec_copy):
             if len(rec["collection"]) > 0:
                 rec["future"] = []
                 for vis in rec["collection"]:
-                    # chart = Vis.to_code.remote(vis)
-                    print (vis)
-                    chart = vis.to_code()
+                    chart = vis.to_code.remote()
+                    # chart = vis.to_code()
                     futures.append(chart)
                     rec["future"].append(chart)
                 rec_lst.append(rec)
                 # delete since not JSON serializable
                 del rec_lst[idx]["collection"]
-        print ("futures:",futures)
-        print ("rec_lst:",rec_lst)
         for rec in rec_lst:
             # Convert futures to vspec
             chart = ray.get(rec["future"])
             rec["vspec"] = chart
             del rec["future"]
-        print ("rec_lst:",rec_lst)
         return rec_lst
     # @staticmethod
     # def rec_to_JSON(recs):

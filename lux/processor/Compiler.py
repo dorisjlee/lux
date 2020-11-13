@@ -37,15 +37,12 @@ class Compiler:
     @staticmethod
     def compile_vis(ldf: LuxDataFrame, vis: Vis) -> Vis:
         if vis:
-            print ('inside compile_vis:', id(vis))
             Compiler.populate_data_type_model(ldf, [vis])  # autofill data type/model information
             # vis_collection = Compiler.remove_all_invalid(
             #     vis_collection
             # )  # remove invalid visualizations from collection
             # for vis in vis_collection:
             Compiler.determine_encoding(ldf, vis)  # autofill viz related information
-            print ("vis:",vis)
-            print ('after determine_encoding:', id(vis))
             ldf._compiled = True
             return vis
 
