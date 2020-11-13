@@ -856,11 +856,15 @@ class LuxDataFrame(pd.DataFrame):
 
     @staticmethod
     def current_vis_to_JSON(vlist, input_current_vis=""):
+        from lux.vis.RemoteVis import RemoteVis
         current_vis_spec = {}
         numVC = len(vlist)  # number of visualizations in the vis list
         if numVC == 1:
-            current_vis_spec = ray.get(Vis.to_code.remote(vlist[0]))
-            #current_vis_spec = vlist[0].to_code()
+            # current_vis_spec = ray.get(RemoteVis.to_code.remote(vlist[0]))
+            print ("vlist[0]",vlist[0])
+            print ("vlist[0].to_code()",vlist[0].to_code())
+            current_vis_spec = vlist[0].to_code()
+            print ("current_vis_spec",current_vis_spec)
         elif numVC > 1:
             pass
         return current_vis_spec
@@ -876,17 +880,22 @@ class LuxDataFrame(pd.DataFrame):
             if len(rec["collection"]) > 0:
                 rec["future"] = []
                 for vis in rec["collection"]:
-                    chart = Vis.to_code.remote(vis)
+                    # chart = Vis.to_code.remote(vis)
+                    print (vis)
+                    chart = vis.to_code()
                     futures.append(chart)
                     rec["future"].append(chart)
                 rec_lst.append(rec)
                 # delete since not JSON serializable
                 del rec_lst[idx]["collection"]
+        print ("futures:",futures)
+        print ("rec_lst:",rec_lst)
         for rec in rec_lst:
             # Convert futures to vspec
             chart = ray.get(rec["future"])
             rec["vspec"] = chart
             del rec["future"]
+        print ("rec_lst:",rec_lst)
         return rec_lst
     # @staticmethod
     # def rec_to_JSON(recs):
@@ -903,6 +912,8 @@ class LuxDataFrame(pd.DataFrame):
     #             rec_lst.append(rec)
     #             # delete DataObjectCollection since not JSON serializable
     #             del rec_lst[idx]["collection"]
+    #     rec_lst = ray.get(rec_lst)
+    #     print (rec_lst)
     #     return rec_lst
 
     # Overridden Pandas Functions

@@ -77,10 +77,10 @@ class RemoteVis():
             str_channels += channel[0] + ": " + channel[1] + ", "
 
         if filter_intents:
-            return f"<Vis  ({str_channels[:-2]} -- [{filter_intents.attribute}{filter_intents.filter_op}{filter_intents.value}]) mark: {self._mark}, score: {self.score} >"
+            return f"<RemoteVis  ({str_channels[:-2]} -- [{filter_intents.attribute}{filter_intents.filter_op}{filter_intents.value}]) mark: {self._mark}, score: {self.score} >"
         else:
             return (
-                f"<Vis  ({str_channels[:-2]}) mark: {self._mark}, score: {self.score} >"
+                f"<RemoteVis  ({str_channels[:-2]}) mark: {self._mark}, score: {self.score} >"
             )
 
     @property
@@ -340,18 +340,25 @@ class RemoteVis():
             from lux.executor.PandasExecutor import (
                 PandasExecutor,
             )  # TODO: temporary (generalize to executor)
-
+            print ("beginning:",id(self))
             ldf.maintain_metadata()
             self._source = ldf
             self._inferred_intent = Parser.parse(self._intent)
             Validator.validate_intent(self._inferred_intent, ldf)
-            vlist = Compiler.compile_vis(ldf, self)
-            ldf.executor.execute(vlist, ldf)
+            print ("before compiler:",id(self))
+            Compiler.compile_vis(ldf, self)
+            print ('after compiler:', id(self))
+            ldf.executor.execute([self], ldf)
+            print ('after executor:', id(self))
+            print ("self.data:",self.data.to_pandas())
+            # print ('vlist',vlist)
+            print ('final vis',self)
             # Copying properties over since we can not redefine `self` within class function
-            if len(vlist) > 0:
-                vis = vlist[0]
-                self.title = vis.title
-                self._mark = vis._mark
-                self._inferred_intent = vis._inferred_intent
-                self._vis_data = vis.data
-                self._min_max = vis._min_max
+            # if (self):
+            #     vis = vlist[0]
+            #     print ("final vis:",vis)
+            #     self.title = vis.title
+            #     self._mark = vis._mark
+            #     self._inferred_intent = vis._inferred_intent
+            #     self._vis_data = vis.data
+            #     self._min_max = vis._min_max

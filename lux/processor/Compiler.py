@@ -35,20 +35,19 @@ class Compiler:
         return f"<Compiler>"
 
     @staticmethod
-    def compile_vis(ldf: LuxDataFrame, vis: Vis) -> VisList:
+    def compile_vis(ldf: LuxDataFrame, vis: Vis) -> Vis:
         if vis:
-            vis_collection = Compiler.populate_data_type_model(
-                ldf, [vis]
-            )  # autofill data type/model information
-            vis_collection = Compiler.remove_all_invalid(
-                vis_collection
-            )  # remove invalid visualizations from collection
-            for vis in vis_collection:
-                Compiler.determine_encoding(
-                    ldf, vis
-                )  # autofill viz related information
+            print ('inside compile_vis:', id(vis))
+            Compiler.populate_data_type_model(ldf, [vis])  # autofill data type/model information
+            # vis_collection = Compiler.remove_all_invalid(
+            #     vis_collection
+            # )  # remove invalid visualizations from collection
+            # for vis in vis_collection:
+            Compiler.determine_encoding(ldf, vis)  # autofill viz related information
+            print ("vis:",vis)
+            print ('after determine_encoding:', id(vis))
             ldf._compiled = True
-            return vis_collection
+            return vis
 
     @staticmethod
     def compile_intent(ldf: LuxDataFrame, _inferred_intent: List[Clause]) -> VisList:
@@ -72,9 +71,7 @@ class Compiler:
         """
         if _inferred_intent:
             vis_collection = Compiler.enumerate_collection(_inferred_intent, ldf)
-            vis_collection = Compiler.populate_data_type_model(
-                ldf, vis_collection
-            )  # autofill data type/model information
+            Compiler.populate_data_type_model(ldf, vis_collection)  # autofill data type/model information
             if len(vis_collection) >= 1:
                 vis_collection = Compiler.remove_all_invalid(
                     vis_collection
@@ -138,7 +135,7 @@ class Compiler:
         return VisList(collection)
 
     @staticmethod
-    def populate_data_type_model(ldf, vis_collection) -> VisList:
+    def populate_data_type_model(ldf, vlist):
         """
         Given a underspecified Clause, populate the data_type and data_model information accordingly
 
@@ -156,9 +153,8 @@ class Compiler:
         """
         # TODO: copy might not be neccesary
         from lux.utils.date_utils import is_datetime_string
-        import copy
-
-        vlist = copy.deepcopy(vis_collection)  # Preserve the original dobj
+        # import copy
+        # vlist = copy.deepcopy(vis_collection)  # Preserve the original dobj
         for vis in vlist:
             for clause in vis._inferred_intent:
                 if clause.description == "?":
@@ -184,7 +180,7 @@ class Compiler:
                         vis.title = (
                             f"{clause.attribute} {clause.filter_op} {chart_title}"
                         )
-        return vlist
+        # return vlist
 
     @staticmethod
     def remove_all_invalid(vis_collection: VisList) -> VisList:
