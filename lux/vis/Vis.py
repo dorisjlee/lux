@@ -33,7 +33,6 @@ class Vis:
         self._code = None
         self._mark = ""
         self._min_max = {}
-        self._plot_config = None
         self._postbin = None
         self.title = title
         self.score = score
@@ -109,26 +108,6 @@ class Vis:
         """
         self._intent = intent
         self.refresh_source(self._source)
-
-    @property
-    def plot_config(self):
-        return self._plot_config
-
-    @plot_config.setter
-    def plot_config(self, config_func: Callable):
-        """
-        Modify plot aesthetic settings to the Vis
-        Currently only supported for Altair visualizations
-
-        Parameters
-        ----------
-        config_func : typing.Callable
-                A function that takes in an AltairChart (https://altair-viz.github.io/user_guide/generated/toplevel/altair.Chart.html) as input and returns an AltairChart as output
-        """
-        self._plot_config = config_func
-
-    def clear_plot_config(self):
-        self._plot_config = None
 
     def _repr_html_(self):
         from IPython.display import display
@@ -278,9 +257,24 @@ class Vis:
         else:
             return self._code
 
-    def render_VSpec(self, renderer="altair"):
-        if renderer == "altair":
-            return self.to_VegaLite(prettyOutput=False)
+    def to_code(self, language="vegalite", **kwargs):
+        """
+        Export Vis object to code specification
+
+        Parameters
+        ----------
+        language : str, optional
+            choice of target language to produce the visualization code in, by default "vegalite"
+
+        Returns
+        -------
+        spec:
+            visualization specification corresponding to the Vis object
+        """
+        if language == "vegalite":
+            return self.to_VegaLite(**kwargs)
+        elif language == "altair":
+            return self.to_Altair(**kwargs)
 
     def refresh_source(self, ldf):  # -> Vis:
         """
@@ -309,9 +303,6 @@ class Vis:
             from lux.processor.Parser import Parser
             from lux.processor.Validator import Validator
             from lux.processor.Compiler import Compiler
-            from lux.executor.PandasExecutor import PandasExecutor
-
-            # TODO: temporary (generalize to executor)
 
             self.check_not_vislist_intent()
 
@@ -319,16 +310,8 @@ class Vis:
             self._source = ldf
             self._inferred_intent = Parser.parse(self._intent)
             Validator.validate_intent(self._inferred_intent, ldf)
-            vlist = Compiler.compile_vis(ldf, self)
-            ldf.executor.execute(vlist, ldf)
-            # Copying properties over since we can not redefine `self` within class function
-            if len(vlist) > 0:
-                vis = vlist[0]
-                self.title = vis.title
-                self._mark = vis._mark
-                self._inferred_intent = vis._inferred_intent
-                self._vis_data = vis.data
-                self._min_max = vis._min_max
+            Compiler.compile_vis(ldf, self)
+            ldf.executor.execute([self], ldf)
 
     def check_not_vislist_intent(self):
         import sys

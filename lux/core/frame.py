@@ -22,6 +22,7 @@ from lux.utils.message import Message
 from lux.utils.utils import check_import_lux_widget
 from typing import Dict, Union, List, Callable
 import warnings
+import traceback
 import lux
 
 
@@ -40,15 +41,18 @@ class LuxDataFrame(pd.DataFrame):
         "unique_values",
         "cardinality",
         "_rec_info",
-        "_pandas_only",
         "_min_max",
-        "plot_config",
         "_current_vis",
         "_widget",
         "_recommendation",
         "_prev",
         "_history",
         "_saved_export",
+        "_sampled",
+        "_toggle_pandas_display",
+        "_message",
+        "_pandas_only",
+        "pre_aggregated",
     ]
 
     def __init__(self, *args, **kw):
@@ -68,9 +72,7 @@ class LuxDataFrame(pd.DataFrame):
         self.table_name = ""
 
         self._sampled = None
-        self._default_pandas_display = True
         self._toggle_pandas_display = True
-        self._plot_config = None
         self._message = Message()
         self._pandas_only = False
         # Metadata
@@ -82,6 +84,7 @@ class LuxDataFrame(pd.DataFrame):
         self.cardinality = None
         self._min_max = None
         self.pre_aggregated = None
+        warnings.formatwarning = lux.warning_format
 
     @property
     def _constructor(self):
@@ -187,46 +190,6 @@ class LuxDataFrame(pd.DataFrame):
         self.executor_type = exe
 
     @property
-    def plot_config(self):
-        return self._plot_config
-
-    @plot_config.setter
-    def plot_config(self, config_func: Callable):
-        """
-        Modify plot aesthetic settings to all visualizations in the dataframe display
-        Currently only supported for Altair visualizations
-        Parameters
-        ----------
-        config_func : Callable
-                A function that takes in an AltairChart (https://altair-viz.github.io/user_guide/generated/toplevel/altair.Chart.html) as input and returns an AltairChart as output
-
-        Example
-        ----------
-        Changing the color of marks and adding a title for all charts displayed for this dataframe
-        >>> df = pd.read_csv("lux/data/car.csv")
-        >>> def changeColorAddTitle(chart):
-                        chart = chart.configure_mark(color="red") # change mark color to red
-                        chart.title = "Custom Title" # add title to chart
-                        return chart
-        >>> df.plot_config = changeColorAddTitle
-        >>> df
-        Change the opacity of all scatterplots displayed for this dataframe
-        >>> df = pd.read_csv("lux/data/olympic.csv")
-        >>> def changeOpacityScatterOnly(chart):
-                        if chart.mark=='circle':
-                                chart = chart.configure_mark(opacity=0.1) # lower opacity
-                        return chart
-        >>> df.plot_config = changeOpacityScatterOnly
-        >>> df
-        """
-        self._plot_config = config_func
-        self._recs_fresh = False
-
-    def clear_plot_config(self):
-        self._plot_config = None
-        self._recs_fresh = False
-
-    @property
     def intent(self):
         return self._intent
 
@@ -246,6 +209,7 @@ class LuxDataFrame(pd.DataFrame):
 
     def clear_intent(self):
         self.intent = []
+        self.expire_recs()
 
     def set_intent(self, intent: List[Union[str, Clause]]):
         """
@@ -504,11 +468,11 @@ class LuxDataFrame(pd.DataFrame):
                     lux.register_action("occurrence", univariate, no_vis, "nominal")
                     lux.register_action("temporal", univariate, no_vis, "temporal")
 
-                    lux.register_action("enhance", enhance, one_current_vis)
-                    lux.register_action("filter", filter, one_current_vis)
-                    lux.register_action("generalize", generalize, one_current_vis)
+                    lux.register_action("Enhance", enhance, one_current_vis)
+                    lux.register_action("Filter", filter, one_current_vis)
+                    lux.register_action("Generalize", generalize, one_current_vis)
 
-                    lux.register_action("custom", custom, multiple_current_vis)
+                    lux.register_action("Custom", custom, multiple_current_vis)
 
                 # generate vis from globally registered actions and append to dataframe
                 custom_action_collection = custom_actions(rec_df)
@@ -521,12 +485,6 @@ class LuxDataFrame(pd.DataFrame):
             for rec_info in rec_infolist:
                 action_type = rec_info["action"]
                 vlist = rec_info["collection"]
-                if rec_df._plot_config:
-                    if rec_df.current_vis:
-                        for vis in rec_df.current_vis:
-                            vis._plot_config = rec_df.plot_config
-                    for vis in vlist:
-                        vis._plot_config = rec_df.plot_config
                 if len(vlist) > 0:
                     rec_df.recommendation[action_type] = vlist
             rec_df._rec_info = rec_infolist
@@ -673,13 +631,6 @@ class LuxDataFrame(pd.DataFrame):
                     )
                     display(self.display_pandas())
                     return
-                if len(self.columns) <= 1:
-                    warnings.warn(
-                        "\nLux defaults to Pandas when there is only a single column.",
-                        stacklevel=2,
-                    )
-                    display(self.display_pandas())
-                    return
                 self.maintain_metadata()
 
                 if self._intent != [] and (not hasattr(self, "_compiled") or not self._compiled):
@@ -734,13 +685,14 @@ class LuxDataFrame(pd.DataFrame):
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:
+        except Exception:
             warnings.warn(
                 "\nUnexpected error in rendering Lux widget and recommendations. "
-                "Falling back to Pandas display.\n\n"
-                "Please report this issue on Github: https://github.com/lux-org/lux/issues ",
+                "Falling back to Pandas display.\n"
+                "Please report the following issue on Github: https://github.com/lux-org/lux/issues \n",
                 stacklevel=2,
             )
+            warnings.warn(traceback.format_exc())
             display(self.display_pandas())
 
     def display_pandas(self):
@@ -824,7 +776,7 @@ class LuxDataFrame(pd.DataFrame):
         current_vis_spec = {}
         numVC = len(vlist)  # number of visualizations in the vis list
         if numVC == 1:
-            current_vis_spec = vlist[0].render_VSpec()
+            current_vis_spec = vlist[0].to_code(prettyOutput=False)
         elif numVC > 1:
             pass
         return current_vis_spec
@@ -839,10 +791,10 @@ class LuxDataFrame(pd.DataFrame):
             if len(rec["collection"]) > 0:
                 rec["vspec"] = []
                 for vis in rec["collection"]:
-                    chart = vis.render_VSpec()
+                    chart = vis.to_code(prettyOutput=False)
                     rec["vspec"].append(chart)
                 rec_lst.append(rec)
-                # delete DataObjectCollection since not JSON serializable
+                # delete since not JSON serializable
                 del rec_lst[idx]["collection"]
         return rec_lst
 
