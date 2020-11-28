@@ -247,18 +247,31 @@ class PandasExecutor(Executor):
         """
         import numpy as np
 
+        def get_bin_data(df, bin_attribute):
+            bin_attr = bin_attribute.attribute
+            if not np.isnan(df[bin_attr]).all():
+                # np.histogram breaks if array contain NaN
+                series = df[bin_attr].dropna()
+                counts, bin_edges = np.histogram(series, bins=bin_attribute.bin_size)
+                # bin_edges of size N+1, so need to compute bin_center as the bin location
+                bin_center = np.mean(np.vstack([bin_edges[0:-1], bin_edges[1:]]), axis=0)
+                binned_result = np.array([bin_center, counts]).T
+                return pd.DataFrame(binned_result, columns=[bin_attr, "Number of Records"])
+
         bin_attribute = list(filter(lambda x: x.bin_size != 0, vis._inferred_intent))[0]
-        bin_attr = bin_attribute.attribute
-        if not np.isnan(vis.data[bin_attr]).all():
-            # np.histogram breaks if array contain NaN
-            series = vis.data[bin_attr].dropna()
-            # TODO:binning runs for name attribte. Name attribute has datatype quantitative which is wrong.
-            counts, bin_edges = np.histogram(series, bins=bin_attribute.bin_size)
-            # bin_edges of size N+1, so need to compute bin_center as the bin location
-            bin_center = np.mean(np.vstack([bin_edges[0:-1], bin_edges[1:]]), axis=0)
-            # TODO: Should vis.data be a LuxDataFrame or a Pandas DataFrame?
-            binned_result = np.array([bin_center, counts]).T
-            vis._vis_data = pd.DataFrame(binned_result, columns=[bin_attr, "Number of Records"])
+        color_attribute = vis.get_attr_by_channel("color")
+        df = vis.data
+        if len(color_attribute) == 0:
+            vis._vis_data = get_bin_data(df, bin_attribute)
+        else:
+            color_attr = color_attribute[0].attribute
+            result = []
+            for val in df.unique_values[color_attr]:
+                subset = df[df[color_attr] == val]
+                subset_histo = get_bin_data(subset, bin_attribute)
+                subset_histo[color_attr] = val
+                result.append(subset_histo)
+            vis._vis_data = pd.concat(result).reset_index()
 
     @staticmethod
     def execute_filter(vis: Vis):

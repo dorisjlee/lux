@@ -96,7 +96,9 @@ class AltairChart:
                 self.code += f"chart = chart.encode(color=alt.Color('{color_attr_name}',type='{color_attr_type}',timeUnit='{timeUnit}',title='{color_attr_name}'))"
             else:
                 self.chart = self.chart.encode(color=alt.Color(color_attr_name, type=color_attr_type))
+                self.chart = self.chart.configure_mark(opacity=0.5)
                 self.code += f"chart = chart.encode(color=alt.Color('{color_attr_name}',type='{color_attr_type}'))\n"
+                self.code += f"chart = chart.configure_mark(opacity=0.5)"
         elif len(color_attr) > 1:
             raise ValueError(
                 "There should not be more than one attribute specified in the same channel."

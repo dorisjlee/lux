@@ -45,6 +45,18 @@ def test_vis_collection(global_var):
     assert len(vlist) == len(df.columns) - 1  # remove 1 for vis with for same attribute
 
 
+def test_vis_bar_vs_histogram():
+    url = "https://github.com/lux-org/lux-datasets/blob/master/data/census.csv?raw=true"
+    df = pd.read_csv(url)
+    from lux.vis.Vis import Vis
+
+    vis = Vis([lux.Clause("income"), lux.Clause("age", bin_size=20)], df)
+    assert vis.mark == "histogram"
+
+    vis = Vis([lux.Clause("income"), lux.Clause("age")], df)
+    assert vis.mark == "bar"
+
+
 def test_vis_collection_set_intent(global_var):
     df = pytest.olympic
     vlist = VisList(["Height", "SportType=Ice", "?"], df)

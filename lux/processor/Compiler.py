@@ -280,12 +280,26 @@ class Compiler:
             auto_channel = {"x": measure, "y": count_col}
             vis._mark = "histogram"
         elif ndim == 1 and (nmsr == 0 or nmsr == 1):
-            # Line or Bar Chart
+
             if nmsr == 0:
                 vis._inferred_intent.append(count_col)
             dimension = vis.get_attr_by_data_model("dimension")[0]
             measure = vis.get_attr_by_data_model("measure")[0]
-            vis._mark, auto_channel = line_or_bar(ldf, dimension, measure)
+            # TODO: aggregation set as mean by default when inferred
+            # explicit_agg = measure.aggregation is not None
+            no_explicit_binning = measure.bin_size == 0
+            aggregate = no_explicit_binning and vis.mark != "histogram"
+            # Aggregated: Line or Bar Chart
+            if aggregate:
+                vis._mark, auto_channel = line_or_bar(ldf, dimension, measure)
+            else:
+                if nmsr == 1:
+                    # Un-aggregated: Colored Histogram
+                    vis._mark = "histogram"
+                    # If no bin specified, then default as 10
+                    if measure.bin_size == 0:
+                        measure.bin_size = 10
+                    auto_channel = {"x": measure, "y": count_col, "color": dimension}
         elif ndim == 2 and (nmsr == 0 or nmsr == 1):
             # Line or Bar chart broken down by the dimension
             dimensions = vis.get_attr_by_data_model("dimension")
