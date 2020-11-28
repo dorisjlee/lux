@@ -287,19 +287,20 @@ class Compiler:
             measure = vis.get_attr_by_data_model("measure")[0]
             # TODO: aggregation set as mean by default when inferred
             # explicit_agg = measure.aggregation is not None
-            no_explicit_binning = measure.bin_size == 0
-            aggregate = no_explicit_binning and vis.mark != "histogram"
+            explicit_binning = measure.bin_size != 0
+            # unaggregate = explicit_binning and nmsr==1 and ldf.cardinality[dimension]<=2
+            unaggregate = False
             # Aggregated: Line or Bar Chart
-            if aggregate:
-                vis._mark, auto_channel = line_or_bar(ldf, dimension, measure)
+            if unaggregate:
+                print (unaggregate)
+                # Un-aggregated: Colored Histogram
+                vis._mark = "histogram"
+                # If no bin specified, then default as 10
+                if measure.bin_size == 0:
+                    measure.bin_size = 10
+                auto_channel = {"x": measure, "y": count_col, "color": dimension}
             else:
-                if nmsr == 1:
-                    # Un-aggregated: Colored Histogram
-                    vis._mark = "histogram"
-                    # If no bin specified, then default as 10
-                    if measure.bin_size == 0:
-                        measure.bin_size = 10
-                    auto_channel = {"x": measure, "y": count_col, "color": dimension}
+                vis._mark, auto_channel = line_or_bar(ldf, dimension, measure)
         elif ndim == 2 and (nmsr == 0 or nmsr == 1):
             # Line or Bar chart broken down by the dimension
             dimensions = vis.get_attr_by_data_model("dimension")
