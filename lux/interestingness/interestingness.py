@@ -72,14 +72,14 @@ def interestingness(vis: Vis, ldf: LuxDataFrame) -> int:
     if n_dim == 1 and (n_msr == 0 or n_msr == 1):
         if v_size < 2:
             return -1
-        if n_filter == 0:
-            return unevenness(vis, ldf, measure_lst, dimension_lst)
-        elif n_filter == 1:
-            if vis.mark =="histogram":
-                return 1  #TODO: Mann-Whitney U
-            else:
+        if vis.mark == "histogram":
+            return distribution_difference(vis, ldf)
+        else:
+            if n_filter == 0:
+                return unevenness(vis, ldf, measure_lst, dimension_lst)
+            elif n_filter == 1:
                 return deviation_from_overall(vis, ldf, filter_specs, measure_lst[0].attribute)
-            
+
     # Histogram
     elif n_dim == 0 and n_msr == 1:
         if v_size < 2:
@@ -172,6 +172,25 @@ def skewness(v):
     from scipy.stats import skew
 
     return skew(v)
+
+
+def distribution_difference(vis, ldf):
+    # Perform Mann-Whitney U test on two binned distributions
+    color_attr = vis.get_attr_by_channel("color")[0].attribute
+    split_df = [pd.DataFrame(y) for x, y in vis.data.groupby(color_attr, as_index=False)]
+    if len(split_df) == 2:
+        from scipy.stats import mannwhitneyu
+
+        series1 = split_df[0]["Number of Records"]
+        series2 = split_df[1]["Number of Records"]
+        pval = mannwhitneyu(series1, series2)[1]
+        # TODO: Need better normalization for scores
+        if pval < 0.05:
+            return 1
+        else:
+            return 0.5
+    else:
+        return 0.01
 
 
 def weighted_avg(x, w):

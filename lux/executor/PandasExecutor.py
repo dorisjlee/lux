@@ -272,7 +272,7 @@ class PandasExecutor(Executor):
                     subset_histo = get_bin_data(subset, bin_attribute)
                     subset_histo[color_attr] = val
                     result.append(subset_histo)
-            vis._vis_data = pd.concat(result).reset_index()
+            vis._vis_data = pd.concat(result).reset_index(drop=True)
 
     @staticmethod
     def execute_filter(vis: Vis):

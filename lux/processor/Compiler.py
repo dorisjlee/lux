@@ -290,7 +290,7 @@ class Compiler:
             explicit_binning = measure.bin_size != 0
             explicit_histogram = vis._mark == "histogram"
             unaggregate = (
-                (explicit_binning or explicit_histogram)
+                (explicit_binning or explicit_histogram)  # TODO: determine better criteria
                 and nmsr == 1
                 and ldf.cardinality[dimension.attribute] <= 2
             )
