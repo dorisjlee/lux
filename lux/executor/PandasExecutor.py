@@ -268,9 +268,10 @@ class PandasExecutor(Executor):
             result = []
             for val in df.unique_values[color_attr]:
                 subset = df[df[color_attr] == val]
-                subset_histo = get_bin_data(subset, bin_attribute)
-                subset_histo[color_attr] = val
-                result.append(subset_histo)
+                if len(subset) > 0:
+                    subset_histo = get_bin_data(subset, bin_attribute)
+                    subset_histo[color_attr] = val
+                    result.append(subset_histo)
             vis._vis_data = pd.concat(result).reset_index()
 
     @staticmethod

@@ -68,6 +68,9 @@ class AltairChart:
             labelFontSize=9,
             labelFont="Helvetica Neue",
         )
+        if self.vis.mark == "histogram" and len(self.vis.get_attr_by_channel("color")) > 0:
+            self.chart = self.chart.configure_mark(opacity=0.5)
+            self.code += "chart = chart.configure_mark(opacity=0.5)\n"
         self.chart = self.chart.properties(width=160, height=150)
         self.code += (
             "\nchart = chart.configure_title(fontWeight=500,fontSize=13,font='Helvetica Neue')\n"
@@ -76,6 +79,7 @@ class AltairChart:
         self.code += "\t\t\t\t\tlabelFontWeight=400,labelFontSize=8,labelFont='Helvetica Neue',labelColor='#505050')\n"
         self.code += "chart = chart.configure_legend(titleFontWeight=500,titleFontSize=10,titleFont='Helvetica Neue',\n"
         self.code += "\t\t\t\t\tlabelFontWeight=400,labelFontSize=8,labelFont='Helvetica Neue')\n"
+
         self.code += "chart = chart.properties(width=160,height=150)\n"
 
     def encode_color(self):
@@ -96,9 +100,7 @@ class AltairChart:
                 self.code += f"chart = chart.encode(color=alt.Color('{color_attr_name}',type='{color_attr_type}',timeUnit='{timeUnit}',title='{color_attr_name}'))"
             else:
                 self.chart = self.chart.encode(color=alt.Color(color_attr_name, type=color_attr_type))
-                self.chart = self.chart.configure_mark(opacity=0.5)
                 self.code += f"chart = chart.encode(color=alt.Color('{color_attr_name}',type='{color_attr_type}'))\n"
-                self.code += f"chart = chart.configure_mark(opacity=0.5)"
         elif len(color_attr) > 1:
             raise ValueError(
                 "There should not be more than one attribute specified in the same channel."

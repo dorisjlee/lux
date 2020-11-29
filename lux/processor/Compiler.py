@@ -288,11 +288,13 @@ class Compiler:
             # TODO: aggregation set as mean by default when inferred
             # explicit_agg = measure.aggregation is not None
             explicit_binning = measure.bin_size != 0
-            # unaggregate = explicit_binning and nmsr==1 and ldf.cardinality[dimension]<=2
-            unaggregate = False
-            # Aggregated: Line or Bar Chart
+            explicit_histogram = vis._mark == "histogram"
+            unaggregate = (
+                (explicit_binning or explicit_histogram)
+                and nmsr == 1
+                and ldf.cardinality[dimension.attribute] <= 2
+            )
             if unaggregate:
-                print (unaggregate)
                 # Un-aggregated: Colored Histogram
                 vis._mark = "histogram"
                 # If no bin specified, then default as 10
@@ -300,6 +302,7 @@ class Compiler:
                     measure.bin_size = 10
                 auto_channel = {"x": measure, "y": count_col, "color": dimension}
             else:
+                # Aggregated: Line or Bar Chart
                 vis._mark, auto_channel = line_or_bar(ldf, dimension, measure)
         elif ndim == 2 and (nmsr == 0 or nmsr == 1):
             # Line or Bar chart broken down by the dimension

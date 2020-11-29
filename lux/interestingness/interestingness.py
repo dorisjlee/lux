@@ -75,7 +75,11 @@ def interestingness(vis: Vis, ldf: LuxDataFrame) -> int:
         if n_filter == 0:
             return unevenness(vis, ldf, measure_lst, dimension_lst)
         elif n_filter == 1:
-            return deviation_from_overall(vis, ldf, filter_specs, measure_lst[0].attribute)
+            if vis.mark =="histogram":
+                return 1  #TODO: Mann-Whitney U
+            else:
+                return deviation_from_overall(vis, ldf, filter_specs, measure_lst[0].attribute)
+            
     # Histogram
     elif n_dim == 0 and n_msr == 1:
         if v_size < 2:

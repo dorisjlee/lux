@@ -51,10 +51,15 @@ def test_vis_bar_vs_histogram():
     from lux.vis.Vis import Vis
 
     vis = Vis([lux.Clause("income"), lux.Clause("age", bin_size=20)], df)
-    assert vis.mark == "histogram"
+    assert vis.mark == "histogram", "Explicitly setting bin size to generate colored histogram"
+
+    vis = Vis([lux.Clause("income"), lux.Clause("age")])
+    vis._mark = "histogram"
+    vis.refresh_source(df)
+    assert vis.mark == "histogram", "Explicitly setting mark as histogram to generate colored histogram"
 
     vis = Vis([lux.Clause("income"), lux.Clause("age")], df)
-    assert vis.mark == "bar"
+    assert vis.mark == "bar", "Default bar chart"
 
 
 def test_vis_collection_set_intent(global_var):
