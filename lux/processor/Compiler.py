@@ -246,6 +246,8 @@ class Compiler:
                     nmsr += 1
             else:  # preserve to add back to _inferred_intent later
                 filters.append(clause)
+        vis._ndim = ndim
+        vis._nmsr = nmsr
         # Helper function (TODO: Move this into utils)
         def line_or_bar(ldf, dimension: Clause, measure: Clause):
             dim_type = dimension.data_type
@@ -292,7 +294,7 @@ class Compiler:
             unaggregate = (
                 (explicit_binning or explicit_histogram)  # TODO: determine better criteria
                 and nmsr == 1
-                and ldf.cardinality[dimension.attribute] <= 2
+                and ldf.cardinality[dimension.attribute] == 2
             )
             if unaggregate:
                 # Un-aggregated: Colored Histogram
