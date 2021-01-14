@@ -89,10 +89,8 @@ class LuxSeries(pd.Series):
         https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.unique.html
         """
         if self.unique_values and self.name in self.unique_values.keys():
-            # print ("Cached")
-            return self.unique_values[self.name]
+            return np.array(self.unique_values[self.name])
         else:
-            # print ("Recomputed")
             return super(LuxSeries, self).unique()
 
     def __repr__(self):
