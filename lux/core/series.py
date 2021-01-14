@@ -70,6 +70,7 @@ class LuxSeries(pd.Series):
         import lux.core
 
         return lux.core.originalSeries(self, copy=False)
+
     def unique(self):
         """
         Overridden method for pd.Series.unique with cached results.
@@ -81,19 +82,19 @@ class LuxSeries(pd.Series):
         Returns
         -------
         ndarray or ExtensionArray
-            The unique values returned as a NumPy array. 
-        
+            The unique values returned as a NumPy array.
+
         See Also
         --------
         https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.unique.html
         """
-        if (self.unique_values and self.name in self.unique_values.keys()): 
+        if self.unique_values and self.name in self.unique_values.keys():
             # print ("Cached")
             return self.unique_values[self.name]
-        else: 
+        else:
             # print ("Recomputed")
             return super(LuxSeries, self).unique()
-        
+
     def __repr__(self):
         from IPython.display import display
         from IPython.display import clear_output

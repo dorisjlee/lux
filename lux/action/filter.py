@@ -126,7 +126,7 @@ def add_filter(ldf):
         last = get_filter_specs(ldf.intent)[-1]
         output = ldf.intent.copy()[0:-1]
         # array of possible values for attribute
-        arr = ldf[last.attribute].unique().tolist()
+        arr = ldf[last.attribute].unique()
         output.append(lux.Clause(last.attribute, last.attribute, arr))
     vlist = lux.vis.VisList.VisList(output, ldf)
     vlist_copy = lux.vis.VisList.VisList(output, ldf)
