@@ -387,7 +387,7 @@ class LuxDataFrame(pd.DataFrame):
         if recommendations["collection"] is not None and len(recommendations["collection"]) > 0:
             rec_infolist.append(recommendations)
 
-    def maintain_recs(self):
+    def maintain_recs(self, render=True):
         # `rec_df` is the dataframe to generate the recommendations on
         # check to see if globally defined actions have been registered/removed
         if lux.config.update_actions["flag"] == True:
@@ -444,10 +444,12 @@ class LuxDataFrame(pd.DataFrame):
                 if len(vlist) > 0:
                     rec_df._recommendation[action_type] = vlist
             rec_df._rec_info = rec_infolist
-            self._widget = rec_df.render_widget()
+            if render:
+                self._widget = rec_df.render_widget()
         # re-render widget for the current dataframe if previous rec is not recomputed
         elif show_prev:
-            self._widget = rec_df.render_widget()
+            if render:
+                self._widget = rec_df.render_widget()
         self._recs_fresh = True
 
     #######################################################
