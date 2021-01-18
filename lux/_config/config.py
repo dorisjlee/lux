@@ -26,12 +26,17 @@ class Config:
         # flags whether or not an action has been registered or removed and should be re-rendered by frame.py
         self.update_actions: Dict[str, bool] = {}
         self.update_actions["flag"] = False
+        self._topk = 15
+        self._sort = "descending"
+        #####################################
+        #### Optimization Configurations ####
+        #####################################
         self._sampling_start = 10000
         self._sampling_cap = 30000
         self._sampling_flag = True
         self._heatmap_flag = True
-        self._topk = 15
-        self._sort = "descending"
+        self.lazy_maintain = True
+        self.early_pruning = True
 
     @property
     def topk(self):
@@ -99,7 +104,7 @@ class Config:
             Cap on the number of rows to sample. Must be larger than _sampling_start
         """
         if type(sample_number) == int:
-            assert sample_number >= self._sampling_start
+            # assert sample_number >= self._sampling_start
             self._sampling_cap = sample_number
         else:
             warnings.warn(
@@ -128,7 +133,7 @@ class Config:
 
         """
         if type(sample_number) == int:
-            assert sample_number <= self._sampling_cap
+            # assert sample_number <= self._sampling_cap
             self._sampling_start = sample_number
         else:
             warnings.warn(

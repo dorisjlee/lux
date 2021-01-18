@@ -107,8 +107,10 @@ class PandasExecutor(Executor):
                         f"Large scatterplots detected: Lux is automatically binning scatterplots to heatmaps.",
                         priority=98,
                     )
-                    # vis._mark = "heatmap"
-                    # PandasExecutor.execute_2D_binning(vis) # Lazy Evaluation (Early pruning based on interestingness)
+                    # Early pruning based on interestingness of scatterplots
+                    if not lux.config.early_pruning:
+                        vis._mark = "heatmap"
+                        PandasExecutor.execute_2D_binning(vis)
 
     @staticmethod
     def execute_aggregate(vis: Vis, isFiltered=True):

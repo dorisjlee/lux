@@ -101,37 +101,48 @@ class LuxDataFrame(pd.DataFrame):
     def history(self):
         return self._history
 
+    def compute_metadata(self):
+        print("compute_metadata")
+        # only compute metadata information if the dataframe is non-empty
+        if len(self) > 0:
+            lux.config.executor.compute_stats(self)
+            lux.config.executor.compute_dataset_metadata(self)
+            self._infer_structure()
+
     def maintain_metadata(self):
-        # Check that metadata has not yet been computed
-        if not hasattr(self, "_metadata_fresh") or not self._metadata_fresh:
-            # only compute metadata information if the dataframe is non-empty
-            if len(self) > 0:
-                lux.config.executor.compute_stats(self)
-                lux.config.executor.compute_dataset_metadata(self)
-                self._infer_structure()
-                self._metadata_fresh = True
+        if lux.config.lazy_maintain:
+            # Check that metadata has not yet been computed
+            if not hasattr(self, "_metadata_fresh") or not self._metadata_fresh:
+                # only compute metadata information if the dataframe is non-empty
+                if len(self) > 0:
+                    lux.config.executor.compute_stats(self)
+                    lux.config.executor.compute_dataset_metadata(self)
+                    self._infer_structure()
+                    self._metadata_fresh = True
 
     def expire_recs(self):
         """
         Expires and resets all recommendations
         """
-        self._recs_fresh = False
-        self._recommendation = {}
-        self.current_vis = None
-        self._widget = None
-        self._rec_info = None
-        self._sampled = None
+        if lux.config.lazy_maintain:
+            self._recs_fresh = False
+            self._recommendation = {}
+            self.current_vis = None
+            self._widget = None
+            self._rec_info = None
+            self._sampled = None
 
     def expire_metadata(self):
         """
         Expire all saved metadata to trigger a recomputation the next time the data is required.
         """
-        self._metadata_fresh = False
-        self.data_type = None
-        self.unique_values = None
-        self.cardinality = None
-        self._min_max = None
-        self.pre_aggregated = None
+        if lux.config.lazy_maintain:
+            self._metadata_fresh = False
+            self.data_type = None
+            self.unique_values = None
+            self.cardinality = None
+            self._min_max = None
+            self.pre_aggregated = None
 
     #####################
     ## Override Pandas ##
@@ -387,6 +398,65 @@ class LuxDataFrame(pd.DataFrame):
         if recommendations["collection"] is not None and len(recommendations["collection"]) > 0:
             rec_infolist.append(recommendations)
 
+    def compute_recs(self, render=True):
+        print("compute_recs")
+        # `rec_df` is the dataframe to generate the recommendations on
+        # check to see if globally defined actions have been registered/removed
+        if lux.config.update_actions["flag"] == True:
+            self._recs_fresh = False
+        show_prev = False  # flag indicating whether rec_df is showing previous df or current self
+        if self._prev is not None:
+            rec_df = self._prev
+            rec_df._message = Message()
+            rec_df.compute_metadata()  # the prev dataframe may not have been printed before
+            last_event = self.history._events[-1].name
+            rec_df._message.add(
+                f"Lux is visualizing the previous version of the dataframe before you applied <code>{last_event}</code>."
+            )
+            show_prev = True
+        else:
+            rec_df = self
+            rec_df._message = Message()
+        # Add warning message if there exist ID fields
+        id_fields_str = ""
+        inverted_data_type = lux.config.executor.invert_data_type(rec_df.data_type)
+        if len(inverted_data_type["id"]) > 0:
+            for id_field in inverted_data_type["id"]:
+                id_fields_str += f"<code>{id_field}</code>, "
+            id_fields_str = id_fields_str[:-2]
+            rec_df._message.add(f"{id_fields_str} is not visualized since it resembles an ID field.")
+        rec_df._prev = None  # reset _prev
+
+        rec_infolist = []
+        from lux.action.row_group import row_group
+        from lux.action.column_group import column_group
+
+        # TODO: Rewrite these as register action inside default actions
+        if rec_df.pre_aggregated:
+            if rec_df.columns.name is not None:
+                rec_df._append_rec(rec_infolist, row_group(rec_df))
+            rec_df._append_rec(rec_infolist, column_group(rec_df))
+        else:
+            # if rec_df._recommendation == {}:
+            from lux.action.custom import custom_actions
+
+            # generate vis from globally registered actions and append to dataframe
+            custom_action_collection = custom_actions(rec_df)
+            for rec in custom_action_collection:
+                rec_df._append_rec(rec_infolist, rec)
+            lux.config.update_actions["flag"] = False
+
+        # Store _rec_info into a more user-friendly dictionary form
+        rec_df._recommendation = {}
+        for rec_info in rec_infolist:
+            action_type = rec_info["action"]
+            vlist = rec_info["collection"]
+            if len(vlist) > 0:
+                rec_df._recommendation[action_type] = vlist
+        rec_df._rec_info = rec_infolist
+        if render:
+            self._widget = rec_df.render_widget()
+
     def maintain_recs(self, render=True):
         # `rec_df` is the dataframe to generate the recommendations on
         # check to see if globally defined actions have been registered/removed
@@ -415,8 +485,13 @@ class LuxDataFrame(pd.DataFrame):
             rec_df._message.add(f"{id_fields_str} is not visualized since it resembles an ID field.")
         rec_df._prev = None  # reset _prev
 
-        # Check that recs has not yet been computed
-        if not hasattr(rec_df, "_recs_fresh") or not rec_df._recs_fresh:
+        # If lazy, check that recs has not yet been computed
+        lazy_but_not_computed = lux.config.lazy_maintain and (
+            not hasattr(rec_df, "_recs_fresh") or not rec_df._recs_fresh
+        )
+        eager = not lux.config.lazy_maintain
+
+        if lazy_but_not_computed or eager:
             rec_infolist = []
             from lux.action.row_group import row_group
             from lux.action.column_group import column_group
