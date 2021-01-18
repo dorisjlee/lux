@@ -63,7 +63,16 @@ class PandasExecutor(Executor):
             ldf._sampled = ldf
 
     @staticmethod
-    def execute(vislist: VisList, ldf: LuxDataFrame):
+    def execute_approx_sample(ldf: LuxDataFrame):
+        # Compute sample used for approx query
+        if ldf._approx_sample is None:  # memoize unfiltered sample df
+            if len(ldf._sampled)>20000:
+                ldf._approx_sample = ldf._sampled.sample(n=1000, random_state=1)
+            else:
+                ldf._approx_sample = ldf._sampled
+
+    @staticmethod
+    def execute(vislist: VisList, ldf: LuxDataFrame,approx=False):
         """
         Given a VisList, fetch the data required to render the vis.
         1) Apply filters
@@ -86,6 +95,12 @@ class PandasExecutor(Executor):
         for vis in vislist:
             # The vis data starts off being original or sampled dataframe
             vis._vis_data = ldf._sampled
+
+            if (approx):
+                vis._original_df = vis._vis_data
+                PandasExecutor.execute_approx_sample(ldf)
+                vis._vis_data = ldf._approx_sample
+                vis.approx = True
             filter_executed = PandasExecutor.execute_filter(vis)
             # Select relevant data based on attribute information
             attributes = set([])
@@ -94,7 +109,6 @@ class PandasExecutor(Executor):
                     attributes.add(clause.attribute)
             # TODO: Add some type of cap size on Nrows ?
             vis._vis_data = vis.data[list(attributes)]
-
             if vis.mark == "bar" or vis.mark == "line":
                 PandasExecutor.execute_aggregate(vis, isFiltered=filter_executed)
             elif vis.mark == "histogram":

@@ -83,5 +83,6 @@ def univariate(ldf, *args):
     for vis in vlist:
         vis.score = interestingness(vis, ldf)
     vlist.sort()
+    vlist = vlist.showK()
     recommendation["collection"] = vlist
     return recommendation

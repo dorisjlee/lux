@@ -129,9 +129,8 @@ def add_filter(ldf):
         arr = ldf[last.attribute].unique().tolist()
         output.append(lux.Clause(last.attribute, last.attribute, arr))
     vlist = lux.vis.VisList.VisList(output, ldf)
-    vlist_copy = lux.vis.VisList.VisList(output, ldf)
-    for i in range(len(vlist_copy)):
-        vlist[i].score = interestingness(vlist_copy[i], ldf)
+    for vis in vlist:
+        vis.score = interestingness(vis, ldf)
     vlist.sort()
     vlist = vlist.showK()
     if recommendation["action"] == "Similarity":

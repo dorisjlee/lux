@@ -72,6 +72,7 @@ class LuxDataFrame(pd.DataFrame):
         lux.config.executor = PandasExecutor()
 
         self._sampled = None
+        self._approx_sample = None
         self._toggle_pandas_display = True
         self._message = Message()
         self._pandas_only = False

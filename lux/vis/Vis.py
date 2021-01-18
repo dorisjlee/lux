@@ -34,6 +34,7 @@ class Vis:
         self._postbin = None
         self.title = title
         self.score = score
+        self.approx = False
         self.refresh_source(self._source)
 
     def __repr__(self):
