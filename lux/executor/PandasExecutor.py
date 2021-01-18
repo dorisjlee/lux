@@ -66,13 +66,13 @@ class PandasExecutor(Executor):
     def execute_approx_sample(ldf: LuxDataFrame):
         # Compute sample used for approx query
         if ldf._approx_sample is None:  # memoize unfiltered sample df
-            if len(ldf._sampled)>20000:
+            if len(ldf._sampled) > 20000:
                 ldf._approx_sample = ldf._sampled.sample(n=1000, random_state=1)
             else:
                 ldf._approx_sample = ldf._sampled
 
     @staticmethod
-    def execute(vislist: VisList, ldf: LuxDataFrame,approx=False):
+    def execute(vislist: VisList, ldf: LuxDataFrame, approx=False):
         """
         Given a VisList, fetch the data required to render the vis.
         1) Apply filters
@@ -96,7 +96,7 @@ class PandasExecutor(Executor):
             # The vis data starts off being original or sampled dataframe
             vis._vis_data = ldf._sampled
 
-            if (approx):
+            if approx:
                 vis._original_df = vis._vis_data
                 PandasExecutor.execute_approx_sample(ldf)
                 vis._vis_data = ldf._approx_sample

@@ -317,9 +317,9 @@ class VisList:
                     Validator.validate_intent(self._inferred_intent, ldf)
                     self._collection = Compiler.compile_intent(ldf, self._inferred_intent)
 
-                width_criteria = len(self._collection)>2*lux.config.topk
-                length_criteria = len(ldf)>=100000
-                if lux.config.early_pruning and width_criteria and length_criteria: 
+                width_criteria = len(self._collection) > 2 * lux.config.topk
+                length_criteria = len(ldf) >= 100000
+                if lux.config.early_pruning and width_criteria and length_criteria:
                     print("Apply approx to this VisList")
                     approx = True
-                lux.config.executor.execute(self._collection, ldf, approx = approx)
+                lux.config.executor.execute(self._collection, ldf, approx=approx)
