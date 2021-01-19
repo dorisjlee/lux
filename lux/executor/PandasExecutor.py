@@ -66,8 +66,8 @@ class PandasExecutor(Executor):
     def execute_approx_sample(ldf: LuxDataFrame):
         # Compute sample used for approx query
         if ldf._approx_sample is None:  # memoize unfiltered sample df
-            if len(ldf._sampled) > 20000:
-                ldf._approx_sample = ldf._sampled.sample(n=1000, random_state=1)
+            if len(ldf._sampled) >= 5000:
+                ldf._approx_sample = ldf._sampled.sample(frac=0.1, random_state=1)
             else:
                 ldf._approx_sample = ldf._sampled
 
