@@ -146,7 +146,7 @@ class LuxDataFrame(pd.DataFrame):
         """
         if lux.config.lazy_maintain:
             self._metadata_fresh = False
-            self.data_type = None
+            self._data_type = None
             self.unique_values = None
             self.cardinality = None
             self._min_max = None
