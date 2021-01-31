@@ -49,7 +49,7 @@ def custom(ldf):
     return recommendation
 
 
-def custom_actions(ldf):
+def compute_actions(ldf):
     """
     Generates user-defined vis based on globally defined actions.
 
@@ -63,17 +63,44 @@ def custom_actions(ldf):
     recommendations : Dict[str,obj]
         object with a collection of visualizations that were previously registered.
     """
+    from lux.vis.cost_estimator import estimate_vlist_cost
+
     if len(lux.config.actions) > 0:
         recommendations = []
+        if lux.config.streaming:
+            action_costs = {}
         for action_name in lux.config.actions.keys():
             display_condition = lux.config.actions[action_name].display_condition
             if display_condition is None or (display_condition is not None and display_condition(ldf)):
                 args = lux.config.actions[action_name].args
-                if args:
-                    recommendation = lux.config.actions[action_name].action(ldf, args)
+                if lux.config.streaming:
+                    # Generate collection without data
+                    if args:
+                        collection = lux.config.actions[action_name].action(
+                            ldf, args, collection_only=True
+                        )
+                    else:
+                        collection = lux.config.actions[action_name].action(ldf, collection_only=True)
+
+                    df_size = len(ldf)
+                    cost = estimate_vlist_cost(collection, df_size)
+                    action_costs[action_name] = cost
+                    # print(action_name, cost)
+                    recommendation = None  # dummy
                 else:
-                    recommendation = lux.config.actions[action_name].action(ldf)
+                    if args:
+                        recommendation = lux.config.actions[action_name].action(ldf, args)
+                    else:
+                        recommendation = lux.config.actions[action_name].action(ldf)
                 recommendations.append(recommendation)
+        if lux.config.streaming:
+            # Pick the min cost action and compute its recommendations (limit to 3)
+            print("action_costs:", action_costs)
+            recommendations = []
+            cheapest_action = min(action_costs, key=action_costs.get)
+            recommendation = lux.config.actions[cheapest_action].action(ldf)
+            recommendations.append(recommendation)
+
         return recommendations
     else:
         return []

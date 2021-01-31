@@ -18,7 +18,7 @@ from lux.processor.Compiler import Compiler
 from lux.utils import utils
 
 
-def enhance(ldf):
+def enhance(ldf, collection_only=False):
     """
     Given a set of vis, generates possible visualizations when an additional attribute is added to the current vis.
 
@@ -26,7 +26,8 @@ def enhance(ldf):
     ----------
     ldf : lux.core.frame
             LuxDataFrame with underspecified intent.
-
+    collection_only: bool
+            Boolean flag indicating whether to generate only the parsed and compiled collection without heavy data lifting (used for cost estimation)
     Returns
     -------
     recommendations : Dict[str,obj]
@@ -60,8 +61,9 @@ def enhance(ldf):
         clause.channel = ""
     intent = filters + attr_specs
     intent.append("?")
-    vlist = lux.vis.VisList.VisList(intent, ldf)
-
+    vlist = lux.vis.VisList.VisList(intent, ldf, collection_only=collection_only)
+    if collection_only:
+        return vlist
     # Then use the data populated in the vis list to compute score
     for vis in vlist:
         vis.score = interestingness(vis, ldf)

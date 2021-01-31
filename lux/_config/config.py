@@ -36,6 +36,7 @@ class Config:
         self._heatmap_flag = True
         self.lazy_maintain = True
         self.early_pruning = True
+        self.streaming = False  # only compute initial view for preview
         self._plotting_backend = "vegalite"
         self._topk = 15
         self._sort = "descending"

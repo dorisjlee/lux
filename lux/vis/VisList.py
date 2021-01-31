@@ -25,7 +25,7 @@ import lux
 class VisList:
     """VisList is a list of Vis objects."""
 
-    def __init__(self, input_lst: Union[List[Vis], List[Clause]], source=None):
+    def __init__(self, input_lst: Union[List[Vis], List[Clause]], source=None, collection_only=False):
         # Overloaded Constructor
         self._source = source
         self._input_lst = input_lst
@@ -40,7 +40,7 @@ class VisList:
             self._collection = []
             self._intent = []
         self._widget = None
-        self.refresh_source(self._source)
+        self.refresh_source(self._source, collection_only=collection_only)
         warnings.formatwarning = lux.warning_format
 
     @property
@@ -275,7 +275,7 @@ class VisList:
         self._widget = luxwidget.LuxWidget(currentVis={}, recommendations=recJSON, intent="", message="")
         display(self._widget)
 
-    def refresh_source(self, ldf):
+    def refresh_source(self, ldf, collection_only=False):
         """
         Loading the source into the visualizations in the VisList, then populating each visualization
         based on the new source data, effectively "materializing" the visualization collection.
@@ -317,6 +317,9 @@ class VisList:
                     Validator.validate_intent(self._inferred_intent, ldf)
                     self._collection = Compiler.compile_intent(ldf, self._inferred_intent)
 
+                if collection_only:
+                    # Just return the unpopulated self._collection
+                    return
                 width_criteria = len(self._collection) > lux.config.topk
                 length_criteria = len(ldf) >= 5000
                 if lux.config.early_pruning and width_criteria and length_criteria:

@@ -21,7 +21,7 @@ from lux.utils import utils
 
 
 # change ignore_transpose to false for now.
-def correlation(ldf: LuxDataFrame, ignore_transpose: bool = True):
+def correlation(ldf: LuxDataFrame, collection_only=False, ignore_transpose: bool = True):
     """
     Generates bivariate visualizations that represent all pairwise relationships in the data.
 
@@ -29,7 +29,8 @@ def correlation(ldf: LuxDataFrame, ignore_transpose: bool = True):
     ----------
     ldf : LuxDataFrame
             LuxDataFrame with underspecified intent.
-
+    collection_only: bool
+            Boolean flag indicating whether to generate only the parsed and compiled collection without heavy data lifting (used for cost estimation)
     ignore_transpose: bool
             Boolean flag to ignore pairs of attributes whose transpose are already computed (i.e., {X,Y} will be ignored if {Y,X} is already computed)
 
@@ -47,7 +48,9 @@ def correlation(ldf: LuxDataFrame, ignore_transpose: bool = True):
         lux.Clause("?", data_model="measure"),
     ]
     intent.extend(filter_specs)
-    vlist = VisList(intent, ldf)
+    vlist = VisList(intent, ldf, collection_only=collection_only)
+    if collection_only:
+        return vlist
     recommendation = {
         "action": "Correlation",
         "description": "Show relationships between two <p class='highlight-descriptor'>quantitative</p> attributes.",
@@ -77,7 +80,6 @@ def correlation(ldf: LuxDataFrame, ignore_transpose: bool = True):
     if ignore_rec_flag:
         recommendation["collection"] = []
         return recommendation
-    print("Correlation", len(vlist))
     vlist.sort()
     vlist = vlist.showK()
     recommendation["collection"] = vlist

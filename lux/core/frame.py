@@ -20,7 +20,7 @@ from lux.vis.VisList import VisList
 from lux.history.history import History
 from lux.utils.message import Message
 from lux.utils.utils import check_import_lux_widget
-from typing import Dict, Union, List, Callable
+from typing import Dict, Union, List, Callable, Optional
 
 # from lux.executor.Executor import *
 import warnings
@@ -111,6 +111,7 @@ class LuxDataFrame(pd.DataFrame):
             lux.config.executor.compute_stats(self)
             lux.config.executor.compute_dataset_metadata(self)
             self._infer_structure()
+
     @property
     def data_type(self):
         if not self._data_type:
@@ -482,10 +483,10 @@ class LuxDataFrame(pd.DataFrame):
             rec_df._append_rec(rec_infolist, column_group(rec_df))
         else:
             # if rec_df._recommendation == {}:
-            from lux.action.custom import custom_actions
+            from lux.action.custom import compute_actions
 
             # generate vis from globally registered actions and append to dataframe
-            custom_action_collection = custom_actions(rec_df)
+            custom_action_collection = compute_actions(rec_df)
             for rec in custom_action_collection:
                 rec_df._append_rec(rec_infolist, rec)
             lux.config.update_actions["flag"] = False
@@ -547,14 +548,13 @@ class LuxDataFrame(pd.DataFrame):
                 rec_df._append_rec(rec_infolist, column_group(rec_df))
             else:
                 # if rec_df._recommendation == {}:
-                from lux.action.custom import custom_actions
+                from lux.action.custom import compute_actions
 
                 # generate vis from globally registered actions and append to dataframe
-                custom_action_collection = custom_actions(rec_df)
+                custom_action_collection = compute_actions(rec_df)
                 for rec in custom_action_collection:
                     rec_df._append_rec(rec_infolist, rec)
                 lux.config.update_actions["flag"] = False
-
             # Store _rec_info into a more user-friendly dictionary form
             rec_df._recommendation = {}
             for rec_info in rec_infolist:

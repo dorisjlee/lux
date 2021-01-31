@@ -230,6 +230,7 @@ def test_similarity(global_var):
 
 
 def test_similarity2():
+    lux.config.early_pruning=False
     df = pd.read_csv(
         "https://raw.githubusercontent.com/lux-org/lux-datasets/master/data/real_estate_tutorial.csv"
     )
@@ -258,3 +259,4 @@ def test_similarity2():
         )
     )[0]
     assert morrisville_vis.score > watertown_vis.score
+    lux.config.early_pruning=True

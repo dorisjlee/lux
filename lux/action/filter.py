@@ -21,7 +21,7 @@ from lux.utils import utils
 from lux.utils.utils import get_filter_specs
 
 
-def add_filter(ldf):
+def add_filter(ldf, collection_only=False):
     """
     Iterates over all possible values of a categorical variable and generates visualizations where each categorical value filters the data.
 
@@ -29,7 +29,8 @@ def add_filter(ldf):
     ----------
     ldf : lux.core.frame
             LuxDataFrame with underspecified intent.
-
+    collection_only: bool
+            Boolean flag indicating whether to generate only the parsed and compiled collection without heavy data lifting (used for cost estimation)
     Returns
     -------
     recommendations : Dict[str,obj]
@@ -128,7 +129,9 @@ def add_filter(ldf):
         # array of possible values for attribute
         arr = ldf[last.attribute].unique().tolist()
         output.append(lux.Clause(last.attribute, last.attribute, arr))
-    vlist = lux.vis.VisList.VisList(output, ldf)
+    vlist = lux.vis.VisList.VisList(output, ldf, collection_only=collection_only)
+    if collection_only:
+        return vlist
     for vis in vlist:
         vis.score = interestingness(vis, ldf)
     vlist.sort()

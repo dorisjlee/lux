@@ -112,18 +112,14 @@ class PandasExecutor(Executor):
                 PandasExecutor.execute_aggregate(vis, isFiltered=filter_executed)
             elif vis.mark == "histogram":
                 PandasExecutor.execute_binning(vis)
-            elif vis.mark == "scatter":
-                HBIN_START = 5000
-                if lux.config.heatmap and len(ldf) > HBIN_START:
+            elif vis.mark == "heatmap":
+                # Early pruning based on interestingness of scatterplots
+                if approx:
                     vis._postbin = True
-                    ldf._message.add_unique(
-                        f"Large scatterplots detected: Lux is automatically binning scatterplots to heatmaps.",
-                        priority=98,
-                    )
-                    # Early pruning based on interestingness of scatterplots
-                    if not lux.config.early_pruning:
-                        vis._mark = "heatmap"
-                        PandasExecutor.execute_2D_binning(vis)
+                    vis._mark = "scatter"
+                else:
+                    vis._mark = "heatmap"
+                    PandasExecutor.execute_2D_binning(vis)
 
     @staticmethod
     def execute_aggregate(vis: Vis, isFiltered=True):

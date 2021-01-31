@@ -18,7 +18,7 @@ import lux
 from lux.utils import utils
 
 
-def univariate(ldf, *args):
+def univariate(ldf, *args, collection_only=False):
     """
     Generates bar chart distributions of different attributes in the dataframe.
 
@@ -26,7 +26,8 @@ def univariate(ldf, *args):
     ----------
     ldf : lux.core.frame
             LuxDataFrame with underspecified intent.
-
+    collection_only: bool
+            Boolean flag indicating whether to generate only the parsed and compiled collection without heavy data lifting (used for cost estimation)
     data_type_constraint: str
             Controls the type of distribution chart that will be rendered.
 
@@ -79,7 +80,9 @@ def univariate(ldf, *args):
     if ignore_rec_flag:
         recommendation["collection"] = []
         return recommendation
-    vlist = VisList(intent, ldf)
+    vlist = VisList(intent, ldf, collection_only=collection_only)
+    if collection_only:
+        return vlist
     for vis in vlist:
         vis.score = interestingness(vis, ldf)
     vlist.sort()
