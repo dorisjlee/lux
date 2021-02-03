@@ -134,7 +134,10 @@ class LuxSeries(pd.Series):
                     )
                     print(series_repr)
                     return ""
-                ldf.maintain_metadata()
+                if lux.config.lazy_maintain:
+                    ldf.maintain_metadata()
+                else:
+                    ldf.compute_metadata()
 
                 if lux.config.default_display == "lux":
                     self._toggle_pandas_display = False
@@ -142,7 +145,10 @@ class LuxSeries(pd.Series):
                     self._toggle_pandas_display = True
 
                 # df_to_display.maintain_recs() # compute the recommendations (TODO: This can be rendered in another thread in the background to populate self._widget)
-                ldf.maintain_recs()
+                if lux.config.lazy_maintain:
+                    ldf.maintain_recs()
+                else:
+                    ldf.compute_recs()
 
                 # Observers(callback_function, listen_to_this_variable)
                 ldf._widget.observe(ldf.remove_deleted_recs, names="deletedIndices")

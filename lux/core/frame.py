@@ -105,7 +105,6 @@ class LuxDataFrame(pd.DataFrame):
         return self._history
 
     def compute_metadata(self):
-        print("compute_metadata")
         # only compute metadata information if the dataframe is non-empty
         if len(self) > 0:
             lux.config.executor.compute_stats(self)
@@ -444,7 +443,6 @@ class LuxDataFrame(pd.DataFrame):
             rec_infolist.append(recommendations)
 
     def compute_recs(self, render=True):
-        print("compute_recs")
         # `rec_df` is the dataframe to generate the recommendations on
         # check to see if globally defined actions have been registered/removed
         if lux.config.update_actions["flag"] == True:
@@ -710,7 +708,10 @@ class LuxDataFrame(pd.DataFrame):
                     )
                     display(self.display_pandas())
                     return
-                self.maintain_metadata()
+                if lux.config.lazy_maintain:
+                    self.maintain_metadata()
+                else:
+                    self.compute_metadata()
 
                 if self._intent != [] and (not hasattr(self, "_compiled") or not self._compiled):
                     from lux.processor.Compiler import Compiler
@@ -723,7 +724,11 @@ class LuxDataFrame(pd.DataFrame):
                     self._toggle_pandas_display = True
 
                 # df_to_display.maintain_recs() # compute the recommendations (TODO: This can be rendered in another thread in the background to populate self._widget)
-                self.maintain_recs()
+                if lux.config.lazy_maintain:
+                    self.maintain_recs()
+                else:
+                    self.compute_recs()
+
 
                 # Observers(callback_function, listen_to_this_variable)
                 self._widget.observe(self.remove_deleted_recs, names="deletedIndices")
