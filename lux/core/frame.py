@@ -127,6 +127,8 @@ class LuxDataFrame(pd.DataFrame):
                     lux.config.executor.compute_dataset_metadata(self)
                     self._infer_structure()
                     self._metadata_fresh = True
+        else:
+            self.compute_metadata()
 
     def expire_recs(self):
         """
