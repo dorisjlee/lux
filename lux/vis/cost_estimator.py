@@ -22,6 +22,7 @@ def get_vis_type(vis):
 def estimate_vlist_cost(vlist, df_size):
     import pandas as pd
     import lux
+
     lookup = pd.DataFrame(
         [
             {
@@ -133,8 +134,8 @@ def estimate_vlist_cost(vlist, df_size):
     for vis in vlist:
         vtype = get_vis_type(vis)
         vlist_cost += ref_lookup[vtype].values[0]
-        vis_count+=1
+        vis_count += 1
         if lux.config.early_pruning:
-            if vis_count>lux.config.topk:
+            if vis_count > lux.config.topk:
                 break
     return vlist_cost

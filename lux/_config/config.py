@@ -34,7 +34,7 @@ class Config:
         self._sampling_cap = 30000
         self._sampling_flag = False
         self._heatmap_flag = True
-        self.lazy_maintain = False
+        self.lazy_maintain = True
         self.early_pruning = False
         self.streaming = False  # only compute initial view for preview
         self._plotting_backend = "vegalite"
@@ -42,6 +42,7 @@ class Config:
         self._sort = "descending"
         self._pandas_fallback = True
         self._interestingness_fallback = True
+        self.heatmap_bin_size = 40
 
     @property
     def topk(self):

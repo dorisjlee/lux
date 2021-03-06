@@ -74,11 +74,12 @@ def interestingness(vis: Vis, ldf: LuxDataFrame) -> int:
             return 1 - euclidean_dist(query_vis, vis)
 
         # Line/Bar Chart
-        # print("r:", n_record, "m:", n_msr, "d:",n_dim)
         if n_dim == 1 and (n_msr == 0 or n_msr == 1):
             if v_size < 2:
                 return -1
 
+            if vis.mark == "geographical":
+                return n_distinct(vis, dimension_lst, measure_lst)
             if n_filter == 0:
                 return unevenness(vis, ldf, measure_lst, dimension_lst)
             elif n_filter == 1:
@@ -298,7 +299,11 @@ def unevenness(vis: Vis, ldf: LuxDataFrame, measure_lst: list, dimension_lst: li
     v = vis.data[measure_lst[0].attribute]
     v = v / v.sum()  # normalize by total to get ratio
     v = v.fillna(0)  # Some bar values may be NaN
-    C = ldf.cardinality[dimension_lst[0].attribute]
+    attr = dimension_lst[0].attribute
+    if isinstance(attr, pd._libs.tslibs.timestamps.Timestamp):
+        # If timestamp, use the _repr_ (e.g., TimeStamp('2020-04-05 00.000')--> '2020-04-05')
+        attr = str(attr._date_repr)
+    C = ldf.cardinality[attr]
     D = (0.9) ** C  # cardinality-based discounting factor
     v_flat = pd.Series([1 / C] * len(v))
     if is_datetime(v):
@@ -358,3 +363,29 @@ def monotonicity(vis: Vis, attr_specs: list, ignore_identity: bool = True) -> in
         return -1
     else:
         return score
+
+
+def n_distinct(vis: Vis, dimension_lst: list, measure_lst: list) -> int:
+    """
+    Computes how many unique values there are for a dimensional data type.
+    Ignores attributes that are latitude or longitude coordinates.
+
+    For example, if a dataset displayed earthquake magnitudes across 48 states and
+    3 countries, return 48 and 3 respectively.
+
+    Parameters
+    ----------
+    vis : Vis
+    dimension_lst: list
+            List of dimension Clause objects.
+    measure_lst: list
+            List of measure Clause objects.
+
+    Returns
+    -------
+    int
+            Score describing the number of unique values in the dimension.
+    """
+    if measure_lst[0].get_attr() in {"longitude", "latitude"}:
+        return -1
+    return vis.data[dimension_lst[0].get_attr()].nunique()

@@ -108,7 +108,8 @@ class PandasExecutor(Executor):
                     attributes.add(clause.attribute)
             # TODO: Add some type of cap size on Nrows ?
             vis._vis_data = vis.data[list(attributes)]
-            if vis.mark == "bar" or vis.mark == "line":
+
+            if vis.mark == "bar" or vis.mark == "line" or vis.mark == "geographical":
                 PandasExecutor.execute_aggregate(vis, isFiltered=filter_executed)
             elif vis.mark == "histogram":
                 PandasExecutor.execute_binning(vis)
@@ -175,9 +176,12 @@ class PandasExecutor(Executor):
 
                 vis._vis_data = vis.data.reset_index()
                 # if color is specified, need to group by groupby_attr and color_attr
+
                 if has_color:
                     vis._vis_data = (
-                        vis.data.groupby([groupby_attr.attribute, color_attr.attribute], dropna=False)
+                        vis.data.groupby(
+                            [groupby_attr.attribute, color_attr.attribute], dropna=False, history=False
+                        )
                         .count()
                         .reset_index()
                         .rename(columns={index_name: "Record"})
@@ -185,7 +189,7 @@ class PandasExecutor(Executor):
                     vis._vis_data = vis.data[[groupby_attr.attribute, color_attr.attribute, "Record"]]
                 else:
                     vis._vis_data = (
-                        vis.data.groupby(groupby_attr.attribute, dropna=False)
+                        vis.data.groupby(groupby_attr.attribute, dropna=False, history=False)
                         .count()
                         .reset_index()
                         .rename(columns={index_name: "Record"})
@@ -195,10 +199,12 @@ class PandasExecutor(Executor):
                 # if color is specified, need to group by groupby_attr and color_attr
                 if has_color:
                     groupby_result = vis.data.groupby(
-                        [groupby_attr.attribute, color_attr.attribute], dropna=False
+                        [groupby_attr.attribute, color_attr.attribute], dropna=False, history=False
                     )
                 else:
-                    groupby_result = vis.data.groupby(groupby_attr.attribute, dropna=False)
+                    groupby_result = vis.data.groupby(
+                        groupby_attr.attribute, dropna=False, history=False
+                    )
                 groupby_result = groupby_result.agg(agg_func)
                 intermediate = groupby_result.reset_index()
                 vis._vis_data = intermediate.__finalize__(vis.data)
@@ -289,10 +295,10 @@ class PandasExecutor(Executor):
             series = vis.data[bin_attr].dropna()
             # TODO:binning runs for name attribte. Name attribute has datatype quantitative which is wrong.
             counts, bin_edges = np.histogram(series, bins=bin_attribute.bin_size)
-            # bin_edges of size N+1, so need to compute bin_center as the bin location
-            bin_center = np.mean(np.vstack([bin_edges[0:-1], bin_edges[1:]]), axis=0)
+            # bin_edges of size N+1, so need to compute bin_start as the bin location
+            bin_start = bin_edges[0:-1]
             # TODO: Should vis.data be a LuxDataFrame or a Pandas DataFrame?
-            binned_result = np.array([bin_center, counts]).T
+            binned_result = np.array([bin_start, counts]).T
             vis._vis_data = pd.DataFrame(binned_result, columns=[bin_attr, "Number of Records"])
 
     @staticmethod
@@ -364,13 +370,13 @@ class PandasExecutor(Executor):
             x_attr = vis.get_attr_by_channel("x")[0].attribute
             y_attr = vis.get_attr_by_channel("y")[0].attribute
 
-            vis._vis_data["xBin"] = pd.cut(vis._vis_data[x_attr], bins=40)
-            vis._vis_data["yBin"] = pd.cut(vis._vis_data[y_attr], bins=40)
+            vis._vis_data["xBin"] = pd.cut(vis._vis_data[x_attr], bins=lux.config.heatmap_bin_size)
+            vis._vis_data["yBin"] = pd.cut(vis._vis_data[y_attr], bins=lux.config.heatmap_bin_size)
 
             color_attr = vis.get_attr_by_channel("color")
             if len(color_attr) > 0:
                 color_attr = color_attr[0]
-                groups = vis._vis_data.groupby(["xBin", "yBin"])[color_attr.attribute]
+                groups = vis._vis_data.groupby(["xBin", "yBin"], history=False)[color_attr.attribute]
                 if color_attr.data_type == "nominal":
                     # Compute mode and count. Mode aggregates each cell by taking the majority vote for the category variable. In cases where there is ties across categories, pick the first item (.iat[0])
                     result = groups.agg(
@@ -386,7 +392,7 @@ class PandasExecutor(Executor):
                     ).reset_index()
                 result = result.dropna()
             else:
-                groups = vis._vis_data.groupby(["xBin", "yBin"])[x_attr]
+                groups = vis._vis_data.groupby(["xBin", "yBin"], history=False)[x_attr]
                 result = groups.count().reset_index(name=x_attr)
                 result = result.rename(columns={x_attr: "count"})
                 result = result[result["count"] != 0]
@@ -425,6 +431,8 @@ class PandasExecutor(Executor):
                     ldf._data_type[attr] = "temporal"
                 elif self._is_datetime_number(ldf[attr]):
                     ldf._data_type[attr] = "temporal"
+                elif self._is_geographical_attribute(ldf[attr]):
+                    ldf._data_type[attr] = "geographical"
                 elif pd.api.types.is_float_dtype(ldf.dtypes[attr]):
                     # int columns gets coerced into floats if contain NaN
                     convertible2int = pd.api.types.is_integer_dtype(ldf[attr].convert_dtypes())
@@ -497,6 +505,12 @@ class PandasExecutor(Executor):
             if datetime_col is not None:
                 return True
         return False
+
+    @staticmethod
+    def _is_geographical_attribute(series):
+        # run detection algorithm
+        name = str(series.name).lower()
+        return utils.like_geo(name)
 
     @staticmethod
     def _is_datetime_number(series):
