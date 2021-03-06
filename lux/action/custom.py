@@ -95,7 +95,6 @@ def compute_actions(ldf):
                 recommendations.append(recommendation)
         if lux.config.streaming:
             # Pick the min cost action and compute its recommendations (limit to 3)
-            print("action_costs:", action_costs)
             recommendations = []
             cheapest_action = min(action_costs, key=action_costs.get)
             recommendation = lux.config.actions[cheapest_action].action(ldf)

@@ -443,7 +443,10 @@ class LuxDataFrame(pd.DataFrame):
     def _append_rec(self, rec_infolist, recommendations: Dict):
         if recommendations["collection"] is not None and len(recommendations["collection"]) > 0:
             rec_infolist.append(recommendations)
-
+    def compute_meta_recs(self, render=True):
+        self.compute_metadata()
+        self.compute_recs(render)
+        
     def compute_recs(self, render=True):
         # `rec_df` is the dataframe to generate the recommendations on
         # check to see if globally defined actions have been registered/removed

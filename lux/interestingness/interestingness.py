@@ -153,7 +153,8 @@ def interestingness(vis: Vis, ldf: LuxDataFrame) -> int:
                 chi2_score = chi2_contingency(contingency_tbl)[0] * 0.9 ** (
                     color_cardinality + groupby_cardinality
                 )
-                score = min(0.01, chi2_score)
+                # score = min(0.01, chi2_score)
+                score = chi2_score
             except (ValueError, KeyError):
                 # ValueError results if an entire column of the contingency table is 0, can happen if an applied filter results in a category having no counts
                 score = -1
@@ -302,10 +303,7 @@ def unevenness(vis: Vis, ldf: LuxDataFrame, measure_lst: list, dimension_lst: li
     v_flat = pd.Series([1 / C] * len(v))
     if is_datetime(v):
         v = v.astype("int")
-    try:
-        return D * euclidean(v, v_flat)
-    except (ValueError):
-        return 0.01
+    return D * euclidean(v, v_flat)
 
 
 def mutual_information(v_x: list, v_y: list) -> int:
