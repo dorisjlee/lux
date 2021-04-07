@@ -187,7 +187,7 @@ class LuxSeries(pd.Series):
                 if lux.config.lazy_maintain:
                     ldf.maintain_recs(is_series="Series")
                 else:
-                    ldf.compute_recs(is_series="Series")
+                    ldf.compute_recs()
 
                 # Observers(callback_function, listen_to_this_variable)
                 ldf._widget.observe(ldf.remove_deleted_recs, names="deletedIndices")

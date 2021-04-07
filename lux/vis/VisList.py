@@ -321,7 +321,7 @@ class VisList:
                     # Just return the unpopulated self._collection
                     return
                 width_criteria = len(self._collection) > lux.config.topk
-                length_criteria = len(ldf) >= 5000
+                length_criteria = len(ldf) >= 30000
                 if lux.config.early_pruning and width_criteria and length_criteria:
                     print("Apply approx to this VisList")
                     approx = True

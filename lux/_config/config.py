@@ -34,7 +34,8 @@ class Config:
         self._sampling_cap = 30000
         self._sampling_flag = False
         self._heatmap_flag = True
-        self.lazy_maintain = True
+        # self.lazy_maintain = True
+        self.lazy_maintain = False
         self.early_pruning = False
         self.streaming = False  # only compute initial view for preview
         self._plotting_backend = "vegalite"
